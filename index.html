@@ -1,31 +1,173 @@
 <!doctype html>
-<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080f1d"><title>Jurnal Pro Trader | Home Prototype</title>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a1220">
+<meta name="description" content="Home Jurnal Pro Trader, prototipe dengan data simulasi akun cent.">
+<title>Home — Jurnal Pro Trader</title>
 <style>
-:root{color-scheme:dark;--bg:#080f1d;--panel:#111d30;--panel2:#15243a;--line:#263750;--text:#f1f6ff;--muted:#91a5bf;--blue:#55aaff;--green:#35d7a1;--red:#ff7789}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -20%,#183455 0,transparent 45%),var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);font-variant-numeric:tabular-nums}.shell{max-width:1080px;margin:auto;padding:24px 22px 112px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:30px}.brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.2px}.logo{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(135deg,#1676da,#69c7ff);box-shadow:0 8px 28px #208cf64d;font-size:21px}.tag{font-size:10px;color:#8ebef6;letter-spacing:1.7px;font-weight:800}.avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#243951;border:1px solid #456080;color:#dceeff;font-weight:700}.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:1.7px;color:var(--muted);font-weight:750}.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:22px}.hero h1{font-size:clamp(26px,4.2vw,36px);margin:7px 0 6px;letter-spacing:-1px}.sub{color:var(--muted);font-size:13px}.pill{border:1px solid #34506e;border-radius:100px;padding:9px 12px;background:#16263a;color:#b7d5f4;font-size:12px;white-space:nowrap}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.card{background:linear-gradient(160deg,#142238,#101b2d);border:1px solid var(--line);border-radius:20px;padding:19px;min-width:0;box-shadow:0 12px 30px #00000016}.metric-label{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}.metric{font-size:clamp(20px,2.8vw,29px);font-weight:800;letter-spacing:-.8px;margin-top:14px;overflow-wrap:anywhere}.delta{font-size:11px;margin-top:10px;color:var(--muted)}.positive{color:var(--green)}.blue{color:#83c5ff}.layout{display:grid;grid-template-columns:1.65fr 1fr;gap:14px;margin-top:14px}.section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:20px}.section-head h2{font-size:15px;margin:0}.tiny{font-size:11px;color:var(--muted)}select{background:#1c304a;border:1px solid #36516e;border-radius:10px;color:#dceaff;padding:8px;font-size:12px}.chart-wrap{position:relative;height:225px}.chart-wrap svg{width:100%;height:100%;overflow:visible}.gridline{stroke:#2a3a50;stroke-dasharray:4 7}.axis{fill:#7d92ad;font-size:10px}.chartline{fill:none;stroke:#58adff;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:900;stroke-dashoffset:900;animation:draw 2.1s ease forwards}.chartarea{fill:url(#shade)}@keyframes draw{to{stroke-dashoffset:0}}.row{display:flex;align-items:center;justify-content:space-between;gap:8px}.progress{height:8px;border-radius:10px;background:#26374d;overflow:hidden;margin:13px 0}.progress>div{height:100%;width:62%;background:linear-gradient(90deg,#2782e4,#66c5ff);border-radius:10px}.divider{height:1px;background:var(--line);margin:20px 0}.statline{display:flex;justify-content:space-between;font-size:13px;margin:15px 0}.statline span:first-child{color:var(--muted)}.activity{margin-top:14px}.activity-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--line)}.activity-item:first-of-type{border-top:0}.symbol{width:38px;height:38px;border-radius:11px;background:#213650;display:grid;place-items:center;color:#8ac6ff;font-weight:800;font-size:12px}.activity-info{flex:1;min-width:0}.activity-info strong{display:block;font-size:13px}.activity-info small{display:block;color:var(--muted);margin-top:4px;font-size:11px}.amount{font-size:13px;font-weight:750}.bottom{position:fixed;bottom:0;left:0;right:0;background:#0c1726ed;backdrop-filter:blur(16px);border-top:1px solid #263b55;z-index:4}.nav{max-width:650px;margin:auto;display:flex;justify-content:space-around;padding:11px 8px max(13px,env(safe-area-inset-bottom))}.nav button{border:0;background:transparent;color:#8398b3;font:inherit;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:58px;cursor:pointer}.nav button.active{color:#71baff}.nav b{font-size:21px;font-weight:500}.notice{font-size:11px;color:#8ea7c5;margin-top:18px;line-height:1.6}.toast{position:fixed;bottom:95px;left:50%;transform:translateX(-50%);padding:12px 16px;border-radius:12px;background:#27445e;color:#fff;font-size:12px;display:none;z-index:5;box-shadow:0 12px 30px #0008;max-width:90%;text-align:center}@media(max-width:760px){.shell{padding:21px 16px 115px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:1fr}.card{padding:16px}.hero{align-items:center}.pill{font-size:10px}.metric{font-size:23px}.chart-wrap{height:200px}}@media(max-width:360px){.metric{font-size:19px}.hero h1{font-size:25px}.brand{font-size:13px}}
-@media(prefers-reduced-motion:reduce){.chartline{animation:none;stroke-dashoffset:0}}
-</style></head>
-<body><main class="shell">
-<header class="top"><div class="brand"><div class="logo" aria-hidden="true">↗</div><div>Jurnal Pro Trader<div class="tag">TRADING PERFORMANCE</div></div></div><div class="avatar" aria-label="Profil demo">JT</div></header>
-<div class="hero"><div><div class="eyebrow">Dashboard overview</div><h1>Welcome back, Trader 👋</h1><div class="sub">Pantau performa, disiplin, dan progres tradingmu.</div></div><span class="pill">● Demo Account</span></div>
-<section class="grid" aria-label="Ringkasan metrik">
-<div class="card"><div class="metric-label">Account Balance <span>◈</span></div><div class="metric" data-count="12480.50" data-prefix="$">$0</div><div class="delta positive">↗ +4.00% bulan ini</div></div>
-<div class="card"><div class="metric-label">Net P/L <span>↗</span></div><div class="metric positive" data-count="480.50" data-prefix="+$">+$0</div><div class="delta">Closed trades · bulan ini</div></div>
-<div class="card"><div class="metric-label">Win Rate <span>◎</span></div><div class="metric" data-count="62.5" data-suffix="%">0%</div><div class="delta">10 win dari 16 ideas</div></div>
-<div class="card"><div class="metric-label">Trade Ideas <span>▤</span></div><div class="metric" data-count="16">0</div><div class="delta">Closed · bulan ini</div></div>
-</section>
-<div class="layout">
-<section class="card"><div class="section-head"><div><h2>Equity Performance</h2><div class="tiny" style="margin-top:5px">Perkembangan balance · data simulasi</div></div><select id="range" aria-label="Periode grafik"><option value="month">30 Hari</option><option value="week">7 Hari</option></select></div><div class="chart-wrap"><svg viewBox="0 0 600 225" preserveAspectRatio="none" role="img" aria-label="Grafik simulasi balance meningkat dari 12000 menjadi 12480 dolar"><defs><linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#4daaff" stop-opacity=".26"/><stop offset="1" stop-color="#4daaff" stop-opacity="0"/></linearGradient></defs><g><line class="gridline" x1="12" y1="20" x2="590" y2="20"/><line class="gridline" x1="12" y1="75" x2="590" y2="75"/><line class="gridline" x1="12" y1="130" x2="590" y2="130"/><line class="gridline" x1="12" y1="185" x2="590" y2="185"/></g><path id="area" class="chartarea"/><path id="line" class="chartline"/><g class="axis"><text x="12" y="220">01 Nov</text><text x="270" y="220">15 Nov</text><text x="540" y="220">30 Nov</text></g></svg></div><div class="row" style="margin-top:8px"><span class="tiny">Starting $12,000.00</span><span class="positive" style="font-size:12px;font-weight:700">+$480.50 ↗</span></div></section>
-<section class="card"><div class="section-head"><h2>Monthly Target</h2><span class="tiny">November 2026</span></div><div class="row"><div><div class="tiny">Progress target</div><div style="font-size:27px;font-weight:800;margin-top:7px">62%</div></div><div class="blue" style="font-size:12px">On track ↗</div></div><div class="progress" role="progressbar" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100" aria-label="Target bulanan"><div></div></div><div class="row tiny"><span>Achieved $480.50</span><span>Target $775.00</span></div><div class="divider"></div><div class="section-head" style="margin-bottom:10px"><h2>Trading Discipline</h2><span class="tiny">Today</span></div><div class="statline"><span>Trade ideas used</span><strong>1 / 3</strong></div><div class="statline"><span>Loss streak</span><strong class="positive">0</strong></div><div class="statline"><span>Risk status</span><strong class="positive">Within plan</strong></div></section>
-</div>
-<section class="card activity"><div class="section-head"><h2>Recent Activity</h2><span class="tiny">Illustrative trades</span></div><div class="activity-item"><div class="symbol">AU</div><div class="activity-info"><strong>XAUUSD <span class="positive">· Buy</span></strong><small>03 Nov 2026 · London Session</small></div><span class="amount positive">+$145.00</span></div><div class="activity-item"><div class="symbol">EU</div><div class="activity-info"><strong>EURUSD <span class="positive">· Sell</span></strong><small>02 Nov 2026 · New York Session</small></div><span class="amount positive">+$92.50</span></div><div class="activity-item"><div class="symbol">AU</div><div class="activity-info"><strong>XAUUSD <span style="color:var(--red)">· Sell</span></strong><small>01 Nov 2026 · London Session</small></div><span class="amount" style="color:var(--red)">−$65.00</span></div></section>
-<p class="notice">PROTOTIPE UI · Semua angka, grafik, dan aktivitas adalah data demo, bukan data akun trading asli. Belum terhubung ke MT5, Supabase, atau penyimpanan jurnal.</p>
-</main><nav class="bottom" aria-label="Navigasi utama"><div class="nav"><button class="active" data-nav="Home"><b>⌂</b>Home</button><button data-nav="Journal"><b>▤</b>Journal</button><button data-nav="Analytics"><b>◫</b>Analytics</button><button data-nav="Settings"><b>⚙</b>Settings</button></div></nav><div id="toast" class="toast" role="status" aria-live="polite"></div>
+:root{color-scheme:dark;--bg:#0a1220;--surface:#111e30;--line:#293a50;--text:#edf4ff;--muted:#9daec5;--blue:#79b8ff;--green:#64d9b1;--red:#ff91a1;--amber:#f0c681}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Bahnschrift,"DIN Alternate",system-ui,sans-serif;-webkit-font-smoothing:antialiased}button,select{font:inherit}button{cursor:pointer}button,select,a{-webkit-tap-highlight-color:transparent}button:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:5px}.icon{width:21px;height:21px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.defs{position:absolute;width:0;height:0;overflow:hidden}.skip{position:fixed;left:16px;top:-90px;z-index:20;padding:12px;background:var(--text);color:var(--bg);border-radius:8px}.skip:focus{top:12px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}.brand-mark{width:35px;height:35px;display:grid;place-items:center;border:1px solid #4c7099;background:#1d3654;border-radius:11px;color:#b8d8ff;flex-shrink:0}.brand-name{font-size:15px;font-weight:650;letter-spacing:-.35px;line-height:1.3}.brand-sub{display:block;margin-top:3px;color:var(--muted);font-size:10px;font-weight:400;letter-spacing:.1px}.rail{display:none}.shell{max-width:1400px;margin:auto;padding:22px 18px calc(106px + env(safe-area-inset-bottom))}.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:25px}.demo-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid #3d4f65;border-radius:6px;padding:4px 8px;color:#c2cede;font-size:11px;white-space:nowrap}.demo-dot{width:5px;height:5px;border-radius:50%;background:#c2cede}.heading{margin-bottom:21px}.date{color:var(--muted);font-size:12px;margin:0 0 5px}h1{font-size:clamp(26px,3vw,34px);line-height:1.2;font-weight:600;letter-spacing:-1.1px;margin:0}.intro{margin:8px 0 0;color:var(--muted);font-size:13px}.controls{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:17px}.account{display:flex;align-items:center;gap:8px;min-width:0}.account-dot{width:7px;height:7px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 4px #79b8ff12;margin:0 3px;flex-shrink:0}.account-name{font-size:12px;font-weight:600}.account-name small{font-size:10px;font-weight:400;display:block;color:var(--muted)}.period{display:flex;flex-direction:column;gap:3px;font-size:10px;color:var(--muted)}select{min-height:42px;max-width:100%;padding:8px 24px 8px 10px;border:1px solid #3d526d;border-radius:8px;background:var(--surface);color:var(--text);font-size:12px}
+.workspace{display:grid;gap:16px}.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;min-width:0}.balance-panel{overflow:hidden}.balance-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:22px 21px 0}.balance-label{color:#bfd0e5;font-size:12px;margin:0}.balance{font-size:clamp(35px,5.2vw,49px);line-height:1.2;letter-spacing:-1.7px;font-weight:600;margin:8px 0 10px;font-variant-numeric:tabular-nums}.unit{color:var(--muted);font-size:13px;font-weight:400;letter-spacing:0;margin-left:6px}.return{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:11px;color:var(--muted)}.return-value{color:var(--green);background:#64d9b110;border-radius:5px;padding:3px 7px;font-weight:600}.balance-emblem{width:36px;height:36px;color:#8da6c7;border:1px solid #344960;border-radius:50%;display:grid;place-items:center;flex-shrink:0}.chart-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:26px 21px 0}h2{margin:0;font-size:14px;font-weight:600;letter-spacing:-.2px}.chart-heading h2{font-size:12px;color:#bfcee2;font-weight:400}.subtle{color:var(--muted);font-size:11px}.chart{margin:9px 14px 0 9px;height:200px}.chart svg{width:100%;height:100%;display:block;overflow:visible}.chart-grid{stroke:#2a3c54;stroke-width:1;stroke-dasharray:3 6}.chart-label{fill:var(--muted);font-size:11px;font-family:inherit;font-variant-numeric:tabular-nums}.chart-line{fill:none;stroke:var(--blue);stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}.chart-dates{display:flex;justify-content:space-between;margin:0 23px 17px 65px;color:var(--muted);font-size:10px}.chart-caption{border-top:1px solid var(--line);padding:11px 21px;color:var(--muted);font-size:11px}
+.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-bottom:1px solid var(--line);margin:17px 0 0}.metric{min-width:0;padding:13px 14px 17px 0}.metric:nth-child(even){border-left:1px solid var(--line);padding-left:19px;padding-right:0}.metric:nth-child(-n+2){border-bottom:1px solid var(--line)}.metric dt{color:var(--muted);font-size:11px}.metric dd{font-size:24px;font-weight:600;letter-spacing:-.7px;margin:5px 0 0;line-height:1.25;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.metric-note{display:block;color:var(--muted);font-size:10px;font-weight:400;margin-top:5px;letter-spacing:0}.positive{color:var(--green)}.negative{color:var(--red)}.metric-unit{font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0}.side-panels{display:grid;gap:16px}.side-panel{padding:20px}.section-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:19px}.target-line{display:flex;align-items:baseline;justify-content:space-between;gap:8px}.target-line strong{font-size:30px;font-weight:550;letter-spacing:-1px;font-variant-numeric:tabular-nums}.target-line span{color:var(--muted);font-size:11px}.progress{height:5px;background:#293c53;border-radius:10px;overflow:hidden;margin:13px 0 10px}.progress-fill{height:100%;background:var(--blue);border-radius:10px;transition:width .2s ease}.progress-values{display:flex;justify-content:space-between;gap:12px;font-size:11px;color:var(--muted)}.target-foot{margin:16px 0 0;font-size:11px;color:var(--muted)}.discipline-main{display:flex;align-items:baseline;justify-content:space-between;gap:12px}.idea-count{font-size:30px;font-weight:550;letter-spacing:-1px}.idea-count span{color:var(--muted);font-size:16px;font-weight:400}.idea-count b{font-weight:550}.limit-status{color:var(--amber);font-size:11px}.quota{display:flex;gap:5px;margin:13px 0}.quota span{height:5px;flex:1;background:#293c53;border-radius:8px}.quota .used{background:var(--blue)}.discipline-note{color:var(--muted);font-size:11px;margin:0 0 17px}.loss-row{border-top:1px solid var(--line);padding-top:13px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;color:var(--muted)}.loss-row strong{color:var(--text);font-size:13px;font-weight:500}
+.recent{margin-top:25px}.recent .section-heading{margin-bottom:9px}.trade-list{list-style:none;padding:0;margin:0}.trade{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 0;border-bottom:1px solid var(--line)}.trade-main{display:flex;gap:11px;align-items:center;min-width:0}.symbol{width:36px;height:36px;border:1px solid #34475e;background:#15253a;display:grid;place-items:center;border-radius:10px;font-size:11px;font-weight:600;color:#b0c8e8;flex-shrink:0}.trade-title{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:600}.side{font-size:10px;color:#b3c7df;border:1px solid #34475e;padding:0 5px;border-radius:4px;font-weight:400}.trade-meta{color:var(--muted);font-size:10px;margin-top:4px}.trade-pnl{text-align:right;font-size:13px;font-weight:550;white-space:nowrap;font-variant-numeric:tabular-nums}.trade-pnl small{display:block;color:var(--muted);font-size:10px;font-weight:400;margin-top:4px}.demo-note{display:flex;gap:9px;margin-top:22px;color:var(--muted);font-size:11px;max-width:76ch}.demo-note svg{width:16px;height:16px;margin-top:1px}.demo-note p{margin:0}.bottom-nav{position:fixed;bottom:0;left:0;right:0;display:flex;align-items:flex-end;justify-content:space-around;padding:10px 6px calc(10px + env(safe-area-inset-bottom));background:#0d192af5;border-top:1px solid var(--line);backdrop-filter:blur(16px);z-index:5}.nav-button{min-height:45px;min-width:0;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:0;background:none;color:var(--muted);padding:2px;font-size:10px}.nav-button[aria-current]{color:var(--blue)}.new-icon{width:41px;height:35px;background:#9ccaff;color:#12243b;border-radius:10px;display:grid;place-items:center;margin-top:-6px}.toast{position:fixed;z-index:10;bottom:calc(92px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 36px);background:#e1edfc;color:#122036;padding:12px 16px;border:1px solid white;border-radius:10px;font-size:12px;box-shadow:0 8px 32px #0005}.toast:empty{display:none}.empty{color:var(--muted);padding:24px 0;font-size:12px}
+@media(min-width:640px){.shell{padding-left:30px;padding-right:30px}.balance-top{padding-top:26px}.chart{height:235px}.metrics{grid-template-columns:repeat(4,minmax(0,1fr));margin:18px 0 0;border-bottom:0}.metric{padding:3px 16px 4px;border-left:1px solid var(--line)}.metric:first-child{border-left:0;padding-left:0}.metric:nth-child(even){padding:3px 16px 4px}.metric:nth-child(-n+2){border-bottom:0}.side-panels{grid-template-columns:repeat(2,minmax(0,1fr))}.side-panel{padding:22px}}
+@media(min-width:1050px){.rail{position:fixed;inset:0 auto 0 0;width:215px;padding:31px 20px;display:flex;flex-direction:column;border-right:1px solid var(--line);background:#0d1727}.rail .brand{margin-bottom:47px}.rail .brand-name{font-size:14px}.rail-nav{display:grid;gap:7px}.rail-nav button{display:flex;align-items:center;gap:12px;padding:12px 14px;min-height:45px;border:1px solid transparent;background:none;color:var(--muted);border-radius:9px;font-size:12px;text-align:left}.rail-nav button[aria-current]{color:#c9e1ff;border-color:#314965;background:#1b304b}.rail-nav .rail-new{background:#9ccaff;color:#12243b;margin-top:15px;font-weight:600}.rail-foot{margin-top:auto;border-top:1px solid var(--line);padding:20px 5px 0;color:var(--muted);font-size:10px}.shell{margin-left:215px;padding:31px 38px 30px}.topbar{padding-bottom:28px}.topbar .brand{visibility:hidden}.heading{margin-bottom:25px}.workspace{grid-template-columns:minmax(0,1fr) 290px;align-items:start;gap:20px}.side-panels{grid-template-columns:1fr}.balance-top{padding:24px 26px 0}.chart-heading{margin-left:26px;margin-right:26px}.chart{height:228px}.chart-caption{padding-left:26px}.bottom-nav{display:none}.toast{bottom:28px}.recent{margin-top:30px}.trade{padding:14px 3px}}
+@media(min-width:1600px){.shell{margin-left:calc(215px + (100vw - 1600px)/2)}}@media(max-width:359px){.shell{padding-left:14px;padding-right:14px}.brand-name{font-size:13px}.brand-sub{font-size:9px}.balance{font-size:33px}.nav-button{font-size:9px}.balance-top{padding-left:17px;padding-right:17px}.trade-title{gap:5px}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<a href="#main" class="skip">Lewati navigasi</a>
+<svg class="defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+<symbol id="i-mark" viewBox="0 0 24 24"><path d="M4 17V9m5 8V5m5 12v-5m5 5V7"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H4V10m5 10v-7h6v7"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 4v16h16M7 14l4-4 4 2 5-7"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-history" viewBox="0 0 24 24"><path d="M4 8V4m0 4h4M4 8a9 9 0 1 1-1 7m9-8v5l3 2"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/><rect x="8" y="4" width="4" height="4" rx="1" fill="#0d192a"/><rect x="14" y="10" width="4" height="4" rx="1" fill="#0d192a"/><rect x="6" y="16" width="4" height="4" rx="1" fill="#0d192a"/></symbol>
+<symbol id="i-wallet" viewBox="0 0 24 24"><path d="M20 8V5H5a2 2 0 0 0 0 4h15v11H5a2 2 0 0 1-2-2V7m17 5h-6v5h6M16 14.5h.1"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></symbol>
+</defs></svg>
+<aside class="rail" aria-label="Panel aplikasi">
+<div class="brand"><span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-mark"/></svg></span><div class="brand-name">Jurnal Pro Trader<span class="brand-sub">Trading performance</span></div></div>
+<nav class="rail-nav" aria-label="Navigasi desktop">
+<button type="button" aria-current="page" data-home><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>Home</button>
+<button type="button" data-page="Analytics"><svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg>Analytics</button>
+<button type="button" data-page="Riwayat"><svg class="icon" aria-hidden="true"><use href="#i-history"/></svg>Riwayat</button>
+<button type="button" data-page="Pengaturan"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg>Pengaturan</button>
+<button type="button" class="rail-new" data-page="Trade baru"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Trade baru</button>
+</nav><div class="rail-foot">Ruang evaluasi tradingmu.<br>Versi prototipe Home.</div></aside>
+<main class="shell" id="main" tabindex="-1">
+<header class="topbar"><div class="brand"><span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-mark"/></svg></span><div class="brand-name">Jurnal Pro Trader<span class="brand-sub">Trading performance</span></div></div><span class="demo-badge"><span class="demo-dot" aria-hidden="true"></span>Data demo</span></header>
+<div class="heading"><p class="date" id="todayLabel"></p><h1>Ringkasan trading</h1><p class="intro">Lihat hasilnya. Evaluasi prosesnya.</p></div>
+<div class="controls"><div class="account"><span class="account-dot" aria-hidden="true"></span><div class="account-name">Personal Cent<small>Akun simulasi dalam USC</small></div></div><label class="period" for="period">Periode performa<select id="period"><option value="month">Bulan ini</option><option value="week">7 hari terakhir</option><option value="all">Semua waktu</option></select></label></div>
+<div class="workspace"><div class="performance">
+<section class="panel balance-panel" aria-label="Saldo dan grafik balance">
+<div class="balance-top"><div><p class="balance-label">Saldo saat ini</p><div class="balance"><span id="balance">—</span><span class="unit">USC</span></div><div class="return"><span class="return-value" id="accountReturn">—</span><span>sejak saldo awal <span id="initialBalance">—</span></span></div></div><div class="balance-emblem"><svg class="icon" aria-hidden="true"><use href="#i-wallet"/></svg></div></div>
+<div class="chart-heading"><h2>Performa balance</h2><span class="subtle" id="chartPeriod">Bulan ini</span></div>
+<div class="chart"><svg id="balanceChart" viewBox="0 0 640 210" role="img" aria-labelledby="chartTitle chartDescription"><title id="chartTitle">Performa balance</title><desc id="chartDescription"></desc><defs><linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#79b8ff" stop-opacity=".15"/><stop offset="1" stop-color="#79b8ff" stop-opacity="0"/></linearGradient></defs><g id="chartGrid"></g><path id="areaPath" fill="url(#chartFill)"/><path id="linePath" class="chart-line"/><circle id="endPoint" r="4" fill="#b7d9ff" stroke="#111e30" stroke-width="3"/></svg></div>
+<div class="chart-dates"><span id="chartStart">—</span><span id="chartEnd">—</span></div><div class="chart-caption">Saldo dari trade closed. Tidak termasuk posisi terbuka.</div></section>
+<dl class="metrics" aria-label="Performa periode terpilih">
+<div class="metric"><dt>Net P/L</dt><dd><span id="netPnl">—</span> <span class="metric-unit">USC</span><span class="metric-note" id="pnlScope">Bulan ini</span></dd></div>
+<div class="metric"><dt>Win rate</dt><dd><span id="winRate">—</span><span class="metric-note" id="winCount">—</span></dd></div>
+<div class="metric"><dt>Trade ideas</dt><dd><span id="ideaCount">—</span><span class="metric-note">Ide closed, bukan layer</span></dd></div>
+<div class="metric"><dt>Profit factor</dt><dd><span id="profitFactor">—</span><span class="metric-note">Net profit / net loss ide</span></dd></div>
+</dl></div>
+<div class="side-panels">
+<section class="panel side-panel" aria-labelledby="targetHeading"><div class="section-heading"><h2 id="targetHeading">Target bulanan</h2><span class="subtle" id="targetMonth">—</span></div><div class="target-line"><strong id="targetPercent">—</strong><span>tercapai</span></div><div class="progress" id="targetProgress" role="progressbar" aria-label="Pencapaian target bulanan" aria-valuemin="0" aria-valuemax="100"><div class="progress-fill" id="targetFill"></div></div><div class="progress-values"><span id="monthlyPnl">—</span><span id="monthlyTarget">—</span></div><p class="target-foot" id="targetRemaining">—</p></section>
+<section class="panel side-panel" aria-labelledby="disciplineHeading"><div class="section-heading"><h2 id="disciplineHeading">Disiplin hari ini</h2><span class="subtle">WIB</span></div><div class="discipline-main"><div class="idea-count"><b id="dailyCount">—</b> <span>/ 3 ide</span></div><span class="limit-status" id="limitStatus">—</span></div><div class="quota" id="quota" aria-hidden="true"><span></span><span></span><span></span></div><p class="discipline-note" id="quotaNote">—</p><div class="loss-row"><span>Loss beruntun hari ini</span><strong id="lossStreak">—</strong></div></section>
+</div></div>
+<section class="recent" aria-labelledby="recentHeading"><div class="section-heading"><h2 id="recentHeading">Trade ideas terbaru</h2><span class="subtle" id="recentScope">Bulan ini</span></div><ul class="trade-list" id="trades"></ul></section>
+<div class="demo-note"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><p>Semua angka adalah simulasi. Home ini belum terhubung ke akun trading atau penyimpanan jurnal. Halaman lain belum tersedia.</p></div>
+<noscript><p>Aktifkan JavaScript untuk menampilkan data demo dan grafik Home.</p></noscript>
+</main>
+<nav class="bottom-nav" aria-label="Navigasi utama">
+<button type="button" class="nav-button" aria-current="page" data-home><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>Home</button>
+<button type="button" class="nav-button" data-page="Analytics"><svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg>Analytics</button>
+<button type="button" class="nav-button" data-page="Trade baru"><span class="new-icon"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></span>Trade baru</button>
+<button type="button" class="nav-button" data-page="Riwayat"><svg class="icon" aria-hidden="true"><use href="#i-history"/></svg>Riwayat</button>
+<button type="button" class="nav-button" data-page="Pengaturan"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg>Pengaturan</button>
+</nav><div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <script>
-const money = (v,prefix,suffix) => prefix+Number(v).toLocaleString('en-US',{minimumFractionDigits: suffix==='%'?1:prefix?2:0,maximumFractionDigits:2})+suffix;
-const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-document.querySelectorAll('[data-count]').forEach(el=>{const goal=Number(el.dataset.count),pre=el.dataset.prefix||'',suf=el.dataset.suffix||'',start=performance.now();function tick(now){const t=reduced?1:Math.min((now-start)/1200,1),ease=1-Math.pow(1-t,3);el.textContent=money(goal*ease,pre,suf);if(t<1)requestAnimationFrame(tick)}requestAnimationFrame(tick)});
-const sets={month:[185,180,188,166,173,158,169,143,153,145,116,123,108,95,102,87,91,65,73,51,59,36,44,27,32,19],week:[165,148,153,112,128,95,103,75,82,48,58,26,19]};
-function draw(k){const values=sets[k],w=578,step=w/(values.length-1),points=values.map((v,i)=>(12+i*step).toFixed(1)+','+v).join(' ');document.getElementById('line').setAttribute('d','M'+points.replaceAll(' ',' L'));document.getElementById('area').setAttribute('d','M'+points.replaceAll(' ',' L')+' L590,195 L12,195 Z');document.querySelectorAll('.axis text').forEach((e,i)=>e.textContent=(k==='week'?['Mon','Thu','Sun']:['01 Nov','15 Nov','30 Nov'])[i]);const line=document.getElementById('line');line.style.animation='none';line.getBoundingClientRect();line.style.animation='';}
-draw('month');document.getElementById('range').addEventListener('change',e=>draw(e.target.value));
-let timeout;document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.nav==='Home')return;const t=document.getElementById('toast');t.textContent=b.dataset.nav+' belum tersedia — tahap ini hanya prototipe Home.';t.style.display='block';clearTimeout(timeout);timeout=setTimeout(()=>t.style.display='none',2600)}));
-</script></body></html>
+'use strict';
+const $=id=>document.getElementById(id);
+const number=(value,digits=2)=>new Intl.NumberFormat('en-US',{minimumFractionDigits:digits,maximumFractionDigits:digits}).format(value);
+const signed=value=>(value<0?'−':'+')+number(Math.abs(value));
+const currency=value=>number(value)+' USC';
+const dateParts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+const part=type=>dateParts.find(p=>p.type===type).value;
+const today=`${part('year')}-${part('month')}-${part('day')}`;
+const asDate=day=>new Date(day+'T12:00:00Z');
+const offsetDay=(day,offset)=>{const date=asDate(day);date.setUTCDate(date.getUTCDate()+offset);return date.toISOString().slice(0,10)};
+const shortDate=day=>new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'short',timeZone:'UTC'}).format(asDate(day));
+const monthStart=today.slice(0,7)+'-01';
+const previousMonth=offsetDay(monthStart,-1);
+// Synthetic fixtures only. Dates follow the Jakarta calendar, not the device timezone.
+const demo={initialBalance:2474,monthlyTarget:500,dailyLimit:3,ideas:[
+{id:'demo-1',date:previousMonth,time:'20:10',symbol:'XAUUSD',side:'Buy',pnl:82.5},
+{id:'demo-2',date:offsetDay(today,-7),time:'19:20',symbol:'XAUUSD',side:'Sell',pnl:-42},
+{id:'demo-3',date:offsetDay(today,-6),time:'20:15',symbol:'EURUSD',side:'Buy',pnl:96.5},
+{id:'demo-4',date:offsetDay(today,-2),time:'19:45',symbol:'XAUUSD',side:'Buy',pnl:124},
+{id:'demo-5',date:today,time:'19:10',symbol:'XAUUSD',side:'Sell',pnl:-31.3},
+{id:'demo-6',date:today,time:'20:05',symbol:'GBPUSD',side:'Buy',pnl:105},
+{id:'demo-7',date:today,time:'21:15',symbol:'XAUUSD',side:'Buy',pnl:144}
+]};
+demo.ideas.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+const sum=ideas=>ideas.reduce((total,idea)=>total+idea.pnl,0);
+const labels={month:'Bulan ini',week:'7 hari terakhir',all:'Semua waktu'};
+function periodData(period){
+ const start=period==='month'?monthStart:period==='week'?offsetDay(today,-6):demo.ideas[0]?.date||today;
+ const ideas=demo.ideas.filter(idea=>idea.date>=start&&idea.date<=today);
+ const opening=demo.initialBalance+sum(demo.ideas.filter(idea=>idea.date<start));
+ return{start,ideas,opening};
+}
+function stats(ideas){
+ const wins=ideas.filter(idea=>idea.pnl>0),losses=ideas.filter(idea=>idea.pnl<0);
+ const grossProfit=sum(wins),grossLoss=-sum(losses);
+ return{pnl:sum(ideas),wins:wins.length,losses:losses.length,breakeven:ideas.length-wins.length-losses.length,winRate:ideas.length?wins.length/ideas.length*100:null,profitFactor:grossLoss?number(grossProfit/grossLoss):grossProfit?'∞':'—'};
+}
+function renderChart(data){
+ let balance=data.opening;
+ const points=[balance,...data.ideas.map(idea=>(balance+=idea.pnl))];
+ if(points.length===1)points.push(balance);
+ const low=Math.min(...points),high=Math.max(...points),padding=Math.max((high-low)*.16,10),min=low-padding,max=high+padding;
+ const width=Math.max(240,$('balanceChart').clientWidth),height=$('balanceChart').clientHeight||200,left=49,right=width-10,bottom=height-20;
+ $('balanceChart').setAttribute('viewBox',`0 0 ${width} ${height}`);
+ const y=value=>bottom-(value-min)/(max-min)*(height-42);
+ const coordinates=points.map((value,index)=>[left+index/(points.length-1)*(right-left),y(value)]);
+ const path=coordinates.map((point,index)=>`${index?'L':'M'}${point[0].toFixed(2)},${point[1].toFixed(2)}`).join(' ');
+ $('linePath').setAttribute('d',path);
+ $('areaPath').setAttribute('d',`${path} L${right},${bottom} L${left},${bottom} Z`);
+ $('chartGrid').innerHTML=[max,(min+max)/2,min].map(value=>`<line class="chart-grid" x1="${left}" y1="${y(value)}" x2="${right}" y2="${y(value)}"/><text class="chart-label" x="${left-9}" y="${y(value)+4}" text-anchor="end">${number(value,0)}</text>`).join('');
+ const last=coordinates[coordinates.length-1];
+ $('endPoint').setAttribute('cx',last[0]);$('endPoint').setAttribute('cy',last[1]);
+ $('chartStart').textContent=shortDate(data.start);$('chartEnd').textContent=shortDate(today);
+ $('chartDescription').textContent=`Saldo awal periode ${currency(data.opening)}, saldo akhir ${currency(balance)}. ${data.ideas.length} trade ideas closed. Titik mengikuti urutan trade, bukan jarak waktu.`;
+}
+function renderPeriod(){
+ const period=$('period').value,data=periodData(period),metric=stats(data.ideas);
+ $('netPnl').textContent=signed(metric.pnl);$('netPnl').className=metric.pnl<0?'negative':'positive';
+ $('winRate').textContent=metric.winRate===null?'—':number(metric.winRate,1)+'%';
+ $('winCount').textContent=`${metric.wins} win / ${metric.losses} loss`+(metric.breakeven?` / ${metric.breakeven} BE`:'');
+ $('ideaCount').textContent=data.ideas.length;$('profitFactor').textContent=metric.profitFactor;
+ for(const id of ['chartPeriod','pnlScope','recentScope'])$(id).textContent=labels[period];
+ $('trades').replaceChildren();
+ for(const idea of data.ideas.slice(-3).reverse()){
+  const li=document.createElement('li');li.className='trade';
+  // Values below come only from the static synthetic fixtures, never external input.
+  li.innerHTML=`<div class="trade-main"><div class="symbol" aria-hidden="true">${idea.symbol==='XAUUSD'?'Au':idea.symbol.slice(0,2)}</div><div><div class="trade-title">${idea.symbol}<span class="side">${idea.side}</span></div><div class="trade-meta">${shortDate(idea.date)} · ${idea.time} WIB · Closed</div></div></div><div class="trade-pnl ${idea.pnl<0?'negative':'positive'}">${signed(idea.pnl)}<small>USC net P/L</small></div>`;
+  $('trades').append(li);
+ }
+ if(!data.ideas.length){const li=document.createElement('li');li.className='empty';li.textContent='Belum ada trade closed pada periode ini.';$('trades').append(li)}
+ renderChart(data);
+}
+function renderAccount(){
+ const pnl=sum(demo.ideas),balance=demo.initialBalance+pnl;
+ $('todayLabel').textContent=new Intl.DateTimeFormat('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(asDate(today));
+ $('balance').textContent=number(balance);$('initialBalance').textContent=currency(demo.initialBalance);
+ $('accountReturn').textContent=(pnl<0?'−':'+')+number(Math.abs(pnl/demo.initialBalance*100))+'%';
+ $('accountReturn').classList.toggle('negative',pnl<0);
+ const month=demo.ideas.filter(idea=>idea.date>=monthStart&&idea.date<=today),monthlyPnl=sum(month);
+ const progress=monthlyPnl/demo.monthlyTarget*100,bounded=Math.max(0,Math.min(progress,100));
+ $('targetMonth').textContent=new Intl.DateTimeFormat('id-ID',{month:'short',year:'numeric',timeZone:'UTC'}).format(asDate(today));
+ $('targetPercent').textContent=number(progress,1)+'%';$('targetFill').style.width=bounded+'%';
+ $('targetProgress').setAttribute('aria-valuenow',number(bounded,1));$('targetProgress').setAttribute('aria-valuetext',number(progress,1)+'% dari target');
+ $('monthlyPnl').textContent=signed(monthlyPnl)+' USC';$('monthlyTarget').textContent='/ '+currency(demo.monthlyTarget);
+ $('targetRemaining').textContent=monthlyPnl>=demo.monthlyTarget?'Target bulan ini tercapai.':`Sisa ${currency(demo.monthlyTarget-monthlyPnl)} menuju target.`;
+ const daily=demo.ideas.filter(idea=>idea.date===today),remaining=Math.max(0,demo.dailyLimit-daily.length);
+ $('dailyCount').textContent=daily.length;$('limitStatus').textContent=remaining?'Kuota tersedia':'Batas tercapai';
+ $('quotaNote').textContent=remaining?`Sisa ${remaining} trade idea hari ini.`:'Kuota demo hari ini sudah terpakai.';
+ $('quota').querySelectorAll('span').forEach((span,index)=>span.classList.toggle('used',index<daily.length));
+ let streak=0;for(let i=daily.length-1;i>=0&&daily[i].pnl<0;i--)streak++;
+ $('lossStreak').textContent=streak+' loss';
+}
+let toastTimer;
+document.querySelectorAll('[data-page]').forEach(button=>button.addEventListener('click',()=>{clearTimeout(toastTimer);$('toast').textContent=`Halaman ${button.dataset.page} belum dibuat. Versi ini hanya berisi Home.`;toastTimer=setTimeout(()=>{$('toast').textContent=''},4500)}));
+document.querySelectorAll('[data-home]').forEach(button=>button.addEventListener('click',()=>{window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})}));
+$('period').addEventListener('change',renderPeriod);renderAccount();renderPeriod();
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>renderChart(periodData($('period').value))).observe($('balanceChart'));
+</script>
+</body>
+</html>
