@@ -3,6 +3,8 @@
 Buka `index.html` langsung di browser. Tidak perlu build, instalasi npm, atau
 koneksi internet. Halaman ini menggunakan data simulasi akun cent dalam USC.
 
+- Ringkasan saldo/P&L hari ini di atas, chips periode, dan sakelar animasi.
+- Bottom sheet detail akun/trade, dialog reset tampilan, dan snackbar dengan Undo.
 - Layout navy/biru dengan sidebar desktop dan navigasi bawah di HP.
 - Grafik balance dengan tooltip, crosshair, sentuhan, dan tombol panah keyboard.
 - Donut win/loss/BE. Klik hasil untuk menyaring tabel; klik lagi untuk membatalkan.
@@ -34,3 +36,14 @@ Jalankan `node tests/verify-home.cjs` (tanpa paket npm tambahan). Pengujian
 menjalankan JavaScript asli di DOM stub untuk memeriksa perhitungan, filter,
 donut, tabel, CSV, dan event grafik. Pengujian tersebut tidak memeriksa layout
 browser atau perilaku perangkat nyata. Status lengkap ada di VERIFICATION.md.
+
+
+## Perbaikan angka/grafik kosong
+
+Target angka Win rate dipisahkan dari keterangannya supaya pembaruan angka tidak
+menghapus elemen yang dipakai render berikutnya. Pengujian regresi kini melacak
+hubungan induk/anak elemen. Animasi yang tidak didukung tidak menghentikan data.
+
+Ketuk Personal Cent atau Lihat detail akun untuk ringkasan akun. Ketuk instrumen
+pada tabel untuk detail trade. Menu titik tiga membuka opsi tampilan; reset hanya
+mengembalikan periode/filter/animasi dan tidak menghapus data contoh.

@@ -75,3 +75,28 @@ LICENSE.txt `f433b1a53f5b830a205fd2df78e2b34974656c7b`.
 
 See VERIFICATION.md for exact tested behavior and limits. Do not equate simulated
 DOM tests with browser or device QA.
+
+
+## Home component additions and render fix
+
+A screenshot showed account/P&L numbers but blank charts and donut. The numeric
+win-rate target was the parent of `winCount`; assigning its `textContent` removed
+that child, and the next write threw. Numeric value spans and explanatory labels
+are now siblings. Tests track ancestor/descendant ID removal rather than treating
+all IDs as independent objects. Optional animation failures preserve static data.
+
+| Reference component | Use in Home |
+| --- | --- |
+| Card | Top account balance and today's P/L, above period metrics |
+| Chips | Quick seven-day/month/all-time period selectors |
+| Toggle switch | Animation on/off, respecting system reduced motion |
+| Bottom sheet | Account summary, trade details, and view options |
+| Dialog | Confirm returning filters/view settings to defaults |
+| Snackbar | Action feedback, with Undo for the animation setting |
+| FAB | Raised circular Trade-new action within bottom navigation |
+| Bottom navigation | Existing five Home-level destinations; other pages remain placeholders |
+
+Do not fabricate entry/SL/TP/lot in the trade sheet. Reset changes only view state,
+not the synthetic ideas. Dialogs use native modal behavior and preserve keyboard
+focus management where the browser supports showModal. No login or live trading
+capability is added.
