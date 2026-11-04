@@ -115,3 +115,15 @@ OCR gambar MT5 nyata, serta deployment produksi belum dilakukan pada redesign.
   dan menyimpan dua layer dalam satu Trade Idea uji setelah Review. Screenshot
   pengguna dan tiket aslinya tidak disertakan dalam repo atau paket publik.
 - Jalur CDN dan `content://` pada Chrome Android pengguna masih perlu diuji.
+
+## Risiko awal dan Expectancy R
+
+- 113 tes unit dan regresi lulus. Patch diterapkan pada baseline OCR1
+  yang bersih dan menghasilkan HTML identik.
+- Chromium pada 320, 390, dan 768 CSS px menguji Quick Trade, PLAN → OPEN
+  melalui Catat fill, validasi risiko L2, serta dua exit dengan hasil Actual.
+  Sembilan trade uji historis menghasilkan 0/9 R-valid. Setelah trade
+  baru ditutup, Home menampilkan 1/10 R-valid dan 1.50R dari Net P/L 75 USC
+  dan total risiko awal 50 USC. Hasil bertahan setelah reload.
+- Regresi impor 1–3 layer dengan keluaran OCR sintetis lulus pada 320,
+  360, 375, 390, 412, 768, dan 1280 CSS px.

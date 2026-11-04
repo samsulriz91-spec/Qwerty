@@ -81,3 +81,12 @@ langsung dalam panel. Kartu statistik Home menampilkan visual per metrik.
 
 New Trade menyediakan Quick Trade satu layar dan Detail Trade tiga tahap.
 Satu screenshot riwayat mengisi L1–L3 sesuai jumlah posisi dan urutan MT5.
+
+New Trade mulai dengan L1. Pada PLAN, risiko rencana bisa dibiarkan kosong.
+Pilih Catat fill di detail Journal saat posisi tereksekusi. Risiko awal
+setiap layer dikunci saat menyimpan OPEN. Review menampilkan nominal per
+layer dan total. Setelah semua exit terverifikasi Actual, jurnal menghitung
+Actual R dari Net P/L ide dibagi total risiko awal. Pencatatan langsung
+CLOSED tetap mendukung P/L tanpa risiko awal, termasuk riwayat dengan SL
+kosong atau pada harga entry. Detail Journal menunjukkan layer yang belum
+memiliki risiko awal valid.
