@@ -78,3 +78,6 @@ Kurangi animasi. Demo Home juga memakai bentuk navigasi baru.
 Revisi New Trade memakai tiga tahap dan dapat mengisi kandidat OCR langsung ke
 draft layer aktif. Journal memakai tab status bersudut dan pilihan filter
 langsung dalam panel. Kartu statistik Home menampilkan visual per metrik.
+
+New Trade menyediakan Quick Trade satu layar dan Detail Trade tiga tahap.
+Screenshot riwayat dengan beberapa posisi membuka pemilih tiket per layer.

@@ -91,3 +91,17 @@ OCR gambar MT5 nyata, serta deployment produksi belum dilakukan pada redesign.
   perlindungan nilai manual, dan pemisahan kandidat dari Actual.
 - Browser Chromium diuji pada lebar 320/360/375/390/412/768/1280 CSS px.
   Screenshot MT5 asli, OCR CDN di Android, dan perangkat fisik masih terbuka.
+
+## Quick Trade dan OCR riwayat beberapa posisi
+
+- 109 tes unit dan regresi lulus. Patch kembali diterapkan pada OCR1 bersih
+  dan menghasilkan HTML identik.
+- Chromium 153 pada 320/360/375/390/412/768/1280 CSS px menguji pindah mode
+  dengan draft, pemulihan dari error baca file, pilih tiket, perlindungan
+  dari tiket ganda antar-layer, offset, hasil nol, dan simpan.
+- Engine Tesseract.js/WASM dijalankan di Chromium dengan aset uji lokal.
+  Jalur unggah memakai PNG yang disiapkan dari gambar di browser. Gambar
+  sintetis dan potongan pratinjau MT5 pengguna berhasil dibaca. Bukti
+  pratinjau pengguna diperiksa privat dan tidak dimasukkan ke repo.
+- Akses CDN langsung dari browser uji gagal. Perilaku CDN dan
+  `content://` pada HP Android pengguna masih perlu diperiksa.

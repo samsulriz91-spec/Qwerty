@@ -138,3 +138,21 @@ draft layer aktif. Pengguna bisa memilih hasil yang bentrok secara eksplisit.
 Offset harus diisi sebelum waktu OCR dipakai. Mengubah teks atau offset
 membatalkan staging sesi terkait. Gross membutuhkan konfirmasi semua komponen
 biaya. OCR tidak menyimpan trade dan tidak mengonfirmasi Actual.
+
+## Quick Trade dan pilihan tiket OCR
+
+New Trade membuka pilihan Quick Trade dan Detail Trade setelah konteks akun
+dan dataset. Quick Trade menggabungkan identitas, layer, dan konfirmasi dalam
+satu layar. Setup dan konteks tambahan bisa dibuka saat perlu. Detail Trade
+mempertahankan Identitas → Layer → Review. Kedua mode memakai draft dan
+validasi yang sama, dengan penyimpanan Live dan Experiment terpisah.
+
+Panel impor menampilkan hasil dan pilihan tiket sebelum opsi teknis. Posisi
+dipilih per layer. Tiket yang sudah dipakai di layer lain diberi pesan dan
+jalan kembali. Nominal tanpa label Net/Gross menunggu keputusan pengguna.
+Waktu perlu offset UTC server atau masukan manual. Pesan gagal menawarkan
+pembacaan ulang, teks, dan isi manual.
+
+Referensi desain tambahan [Impeccable](https://github.com/pbakaus/impeccable)
+dipakai untuk memprioritaskan aksi, merancang pemulihan error, dan menguji
+tampilan sempit. Panduan digunakan untuk review desain.
