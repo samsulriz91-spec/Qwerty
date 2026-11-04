@@ -139,20 +139,25 @@ Offset harus diisi sebelum waktu OCR dipakai. Mengubah teks atau offset
 membatalkan staging sesi terkait. Gross membutuhkan konfirmasi semua komponen
 biaya. OCR tidak menyimpan trade dan tidak mengonfirmasi Actual.
 
-## Quick Trade dan pilihan tiket OCR
+## Quick Trade dan impor beberapa layer
 
 New Trade membuka pilihan Quick Trade dan Detail Trade setelah konteks akun
 dan dataset. Quick Trade menggabungkan identitas, layer, dan konfirmasi dalam
-satu layar. Setup dan konteks tambahan bisa dibuka saat perlu. Detail Trade
-mempertahankan Identitas → Layer → Review. Kedua mode memakai draft dan
-validasi yang sama, dengan penyimpanan Live dan Experiment terpisah.
+satu layar. Detail Trade mempertahankan Identitas → Layer → Review. Kedua mode
+memakai draft dan validasi yang sama, dengan data Live dan Experiment terpisah.
 
-Panel impor menampilkan hasil dan pilihan tiket sebelum opsi teknis. Posisi
-dipilih per layer. Tiket yang sudah dipakai di layer lain diberi pesan dan
-jalan kembali. Nominal tanpa label Net/Gross menunggu keputusan pengguna.
-Waktu perlu offset UTC server atau masukan manual. Pesan gagal menawarkan
-pembacaan ulang, teks, dan isi manual.
+Satu screenshot menghasilkan 1–3 layer sesuai urutan baris MT5. Panel menampilkan
+ringkasan terpisah oleh garis tipis. Koreksi tiap layer bisa dibuka bila perlu.
+Satu tindakan menerapkan seluruh hasil ke draft. Batch berbeda simbol atau
+arah, tiket ganda, dan lebih dari tiga posisi memerlukan gambar terpisah atau
+koreksi teks. Penerapan atas draft yang sudah berisi data menampilkan dampaknya.
 
-Referensi desain tambahan [Impeccable](https://github.com/pbakaus/impeccable)
-dipakai untuk memprioritaskan aksi, merancang pemulihan error, dan menguji
-tampilan sempit. Panduan digunakan untuk review desain.
+Waktu dikonversi ke WIB setelah offset server diisi dan dapat digunakan kembali
+per akun. Sesi diperkirakan dari waktu entry terawal, berdasarkan jam lokal
+Tokyo, London, dan New York. Sesi yang sudah diisi manual tetap dipakai.
+Nominal MT5 dengan komisi dan swap terbaca nol dapat menjadi kandidat Net.
+Biaya nonnol atau belum diketahui ditinjau sebelum simpan. Bukti OCR mencatat
+harga exit, komisi, swap, dan tiket ketika tersedia.
+
+[Impeccable](https://github.com/pbakaus/impeccable) dipakai untuk review susunan
+aksi, pengelompokan informasi, dan keterbacaan layar sempit.

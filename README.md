@@ -80,4 +80,4 @@ draft layer aktif. Journal memakai tab status bersudut dan pilihan filter
 langsung dalam panel. Kartu statistik Home menampilkan visual per metrik.
 
 New Trade menyediakan Quick Trade satu layar dan Detail Trade tiga tahap.
-Screenshot riwayat dengan beberapa posisi membuka pemilih tiket per layer.
+Satu screenshot riwayat mengisi L1–L3 sesuai jumlah posisi dan urutan MT5.

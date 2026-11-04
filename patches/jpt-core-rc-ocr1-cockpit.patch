@@ -1,5 +1,5 @@
 diff --git a/checkpoint/redesign/app.js b/checkpoint/redesign/app.js
-index d7e1d52..0c8a0f9 100644
+index d7e1d52..a132ded 100644
 --- a/checkpoint/redesign/app.js
 +++ b/checkpoint/redesign/app.js
 @@ -1,43 +1,254 @@
@@ -194,7 +194,7 @@ index d7e1d52..0c8a0f9 100644
 +    +'<div class="entry-actions">'+(!quick&&step>0?'<button class="btn secondary" data-a="prev">Kembali</button>':'')+'<button class="btn" data-a="'+(quick||step===2?'save':'next')+'">'+(quick?'Simpan Trade Idea':['Lanjut ke layer','Tinjau trade','Simpan Trade Idea'][step])+'</button></div></main>';
 +}
 +function captureAction(){
-+  return '<button class="capture-action" data-x="ocr">'+icon('target')+'<span><strong>Impor dari MT5</strong><small>Screenshot atau tempel teks · L'+(layerIndex+1)+'</small></span>'+icon('chevron')+'</button>';
++  return '<button class="capture-action" data-x="ocr">'+icon('target')+'<span><strong>Impor dari MT5</strong><small>Isi L1–L3 dari satu screenshot</small></span>'+icon('chevron')+'</button>';
 +}
 +function tradeIdentity(quick=false){
 +  const statuses=[['PLAN','Rencana'],['OPEN','Berjalan'],['CLOSED','Selesai']];
@@ -209,10 +209,10 @@ index d7e1d52..0c8a0f9 100644
 +  const x=draft.layers[layerIndex], closed=draft.status==='CLOSED';
 +  return (quick?'':'<div class="entry-context"><b>'+esc(draft.symbol)+' · '+esc(draft.side)+'</b><span>'+draft.status+' · '+draft.currency+'</span></div>'
 +    +captureAction())
-+    +'<section class="entry-block"><div class="layer-heading"><h2>Layer posisi</h2><span>'+draft.layers.length+' dari 3</span></div>'
++    +'<section class="layer-workbench"><div class="layer-heading"><h2>Layer posisi</h2><span>'+draft.layers.length+' dari 3</span></div>'
 +    +'<div class="layer-switch" role="group" aria-label="Layer trade">'+draft.layers.map((l,i)=>'<button data-layer="'+i+'" aria-pressed="'+(i===layerIndex)+'"><b>L'+(i+1)+'</b><small>'+(l.entry!==''&&l.entry!=null?'Entry '+esc(l.entry):'Belum diisi')+'</small></button>').join('')+'</div>'
 +    +'<div class="layer-count-actions"><button class="textbtn" data-layer-count="'+(draft.layers.length+1)+'" '+(draft.layers.length>=3?'disabled':'')+'>+ Tambah layer</button><button class="textbtn" data-layer-count="'+(draft.layers.length-1)+'" '+(draft.layers.length<=1?'disabled':'')+'>Hapus L'+draft.layers.length+'</button></div>'
-+    +((draft.ocrCapture?.targetLayer==='L'+(layerIndex+1)||draft.ocrCapture?.byLayer?.['L'+(layerIndex+1)])?'<p class="entry-ocr-note">Kandidat OCR tersedia'+(x.netPL!==''?' · Net P/L <strong>'+esc(x.netPL)+' '+draft.currency+'</strong>':'')+'. Cocokkan dengan riwayat MT5.</p>':'')
++    +((draft.ocrCapture?.targetLayer==='L'+(layerIndex+1)||draft.ocrCapture?.byLayer?.['L'+(layerIndex+1)])?'<p class="entry-ocr-note">Impor MT5'+(draft.session?' · '+esc(draft.session):'')+(x.netPL!==''?' · Net P/L <strong>'+esc(x.netPL)+' '+draft.currency+'</strong>':'')+'. Cocokkan dengan riwayat MT5.</p>':'')
 +    +'<div class="fields">'+field('Entry','l.entry',x.entry,'number')+field('Stop loss awal','l.sl',x.sl,'number')+field('Take profit (opsional)','l.tp',x.tp,'number')+field('Lot','l.lot',x.lot,'number')+'</div>'
 +    +field('Risiko awal / rencana ('+draft.currency+')','l.risk',x.risk,'number')
 +    +(draft.status!=='PLAN'?field('Waktu entry (WIB)','l.executedAt',x.executedAt,'datetime-local'):'')
@@ -267,7 +267,7 @@ index d7e1d52..0c8a0f9 100644
 +  if(e.target.id==='search'){jSearch=e.target.value;journalResults();return}
 +  const name=e.target.dataset.field;
 +  if(!name||!draft)return;
-+  if(name==='symbol'||name==='side')(draft.ocrTouched??={})[name]=true;
++  if(['symbol','side','date','session'].includes(name))(draft.ocrTouched??={})[name]=true;
 +  if(['l.executedAt','l.exitAt'].includes(name))(draft.layers[layerIndex].ocrTouched??={})[name.slice(2)]=true;
 +  if(name.startsWith('l.'))draft.layers[layerIndex][name.slice(2)]=e.target.value;
 +  else draft[name]=e.target.type==='checkbox'?e.target.checked:e.target.value;
@@ -313,10 +313,10 @@ index a812481..02ce18e 100644
  html+='</body></html>';(r/'dist/index.html').write_text(html);print('Built',len(html),'bytes; embedded engines, font and UI')
 diff --git a/checkpoint/redesign/cockpit.css b/checkpoint/redesign/cockpit.css
 new file mode 100644
-index 0000000..db1e7fc
+index 0000000..ee2b829
 --- /dev/null
 +++ b/checkpoint/redesign/cockpit.css
-@@ -0,0 +1,510 @@
+@@ -0,0 +1,520 @@
 +/* Calm Cockpit, shared visual language for the Core RC interface. */
 +:root {
 +  --bg: #141318;
@@ -766,13 +766,13 @@ index 0000000..db1e7fc
 +.entry-steps b { display: inline-grid; place-items: center; width: 17px; height: 17px; margin-right: 2px; border-radius: 4px; background: var(--raised); }
 +.entry-steps li[aria-current] b { color: var(--accent-ink); background: var(--accent); }
 +.draft-status { min-height: 19px; color: var(--muted); font-size: 11px; }
-+.entry-block { margin: 10px 0 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
++.entry-block { margin: 14px 0; padding: 12px 0 0; border-top: 1px solid var(--line); }
 +.entry-block h2 { margin: 0 0 8px; font-size: 15px; font-weight: 650; }
 +.layer-heading h2 { margin: 0; }
 +.entry-context { padding: 7px 0 5px; font-size: 13px; }
 +.entry-actions { display: flex; gap: 8px; margin-top: 12px; }
 +.entry-actions > :last-child { flex: 1; }
-+.capture-action { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 9px; width: 100%; min-height: 56px; padding: 7px 11px; border: 1px solid #6e5e92; border-radius: 10px; color: var(--accent); background: var(--accent-wash); text-align: left; }
++.capture-action { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 9px; width: 100%; min-height: 56px; padding: 7px 3px; border-bottom: 1px solid var(--line); color: var(--accent); text-align: left; }
 +.capture-action strong, .capture-action small { display: block; }
 +.capture-action small { margin-top: 3px; color: var(--muted); }
 +.capture-action .icon:last-child { width: 17px; transform: rotate(-90deg); }
@@ -789,15 +789,7 @@ index 0000000..db1e7fc
 +.entry-review-row small { display: block; color: var(--muted); font-size: 10px; margin-top: 4px; }
 +.ocr-upload { display: grid; gap: 7px; padding: 9px; background: var(--accent-wash); border: 1px solid #8873b3; border-radius: 9px; color: var(--accent); font-size: 13px; }
 +.ocr-upload input { width: 100%; color: var(--muted); }
-+.ocr-options, .capture-row { border-top: 1px solid var(--line); }
-+.capture-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto; gap: 6px; align-items: center; padding: 4px 0; }
-+.capture-row > label { font-size: 11px; overflow-wrap: anywhere; }
-+.capture-row small { display: block; color: var(--muted); }
-+.capture-row .input { min-height: 44px; padding: 5px; }
-+.capture-use { display: flex; align-items: center; gap: 3px; min-height: 44px; }
-+.capture-use input { flex: 0 0 auto; }
-+@media(max-width:350px){.capture-use span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}}
-+.entry-account-bar { padding-top: max(10px,env(safe-area-inset-top,0px)); }
++.ocr-options, .entry-account-bar { padding-top: max(10px,env(safe-area-inset-top,0px)); }
 +.entry-title-controls { display: flex; align-items: center; gap: 4px; }
 +.entry-title-controls .icon { width: 17px; }
 +.entry-actions {
@@ -810,28 +802,49 @@ index 0000000..db1e7fc
 +  background: var(--bg);
 +}
 +
-+.entry-mode { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--field); }
-+.entry-mode button { display: grid; align-content: center; gap: 3px; min-height: 50px; padding: 5px 8px; border: 1px solid transparent; border-radius: 7px; text-align: left; }
-+.entry-mode button[aria-pressed="true"] { color: var(--accent); border-color: #8873b3; background: var(--accent-wash); }
++.entry-mode { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); }
++.entry-mode button { display: grid; align-content: center; gap: 3px; min-height: 50px; padding: 5px 6px; border-bottom: 2px solid transparent; text-align: left; }
++.entry-mode button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
 +.entry-mode strong { font-size: 13px; }
 +.entry-mode small { font-size: 11px; color: var(--muted); }
 +.quick-workspace .draft-status { margin-top: 8px; }
 +.quick-extra { border-top: 1px solid var(--line); }
-+.ocr-position-list { display: grid; margin-block: 8px; border-block: 1px solid var(--line); }
-+.ocr-position { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 56px; padding: 7px 2px; text-align: left; }
-+.ocr-position + .ocr-position { border-top: 1px solid var(--line); }
-+.ocr-position strong, .ocr-position small { display: block; }
-+.ocr-position small { color: var(--muted); margin-top: 3px; }
-+.ocr-position > :last-child { color: var(--accent); flex-shrink: 0; }
-+.ocr-position .icon { width: 16px; transform: rotate(-90deg); }
 +#ocr-preview[hidden] { display: none; }
-+.ocr-action-bar { position: sticky; bottom: 0; z-index: 1; padding: 1px 0 4px; background: var(--surface); }
-+.ocr-action-bar .filter-actions { margin-top: 8px; }
++.ocr-action-bar { position: sticky; bottom: 0; z-index: 1; padding: 6px 0; background: var(--surface); }
++
++/* The import preview is a statement, with one line of emphasis per layer. */
++.ocr-import > #ocr-progress { margin: 10px 0; font-size: 13px; }
++.ocr-zone { padding-bottom: 9px; border-bottom: 1px solid var(--line); }
++.ocr-zone .field { margin: 0 0 4px; }
++.ocr-zone small, .ocr-batch-head span { color: var(--muted); font-size: 12px; }
++.ocr-batch-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 9px; justify-content: space-between; padding: 13px 0 5px; }
++.ocr-batch-head > strong { font-size: 14px; }
++.ocr-layer { border-bottom: 1px solid var(--line); padding: 9px 0 2px; }
++.ocr-layer-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
++.ocr-layer-index { color: var(--accent); font-size: 12px; font-weight: 700; margin-right: 4px; }
++.ocr-layer-heading strong { font-size: 13px; }
++.ocr-layer-pl { font-variant-numeric: tabular-nums; }
++.ocr-quotes { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; margin: 7px 0 0; }
++.ocr-quotes dt { color: var(--muted); font-size: 10px; }
++.ocr-quotes dd { margin: 2px 0 0; font-size: 12px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
++.ocr-layer .ocr-layer-time { font-size: 11px; margin: 5px 0 0; }
++.ocr-edit summary { color: var(--accent); }
++.ocr-import .ocr-options { border-top: 1px solid var(--line); }
++.layer-workbench { padding: 12px 0 0; border-top: 1px solid var(--line); margin: 13px 0; }
++.layer-workbench .layer-switch { gap: 0; border-bottom: 1px solid var(--line); }
++.layer-workbench .layer-switch button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; min-height: 48px; padding-inline: 7px; }
++.layer-workbench .layer-switch button[aria-pressed="true"] { border-bottom-color: var(--accent); background: none; }
++.layer-workbench .layer-switch button[aria-pressed="true"] b { color: var(--accent); }
++.layer-workbench .entry-ocr-note { border-bottom: 1px solid var(--line); padding: 0 0 8px; }
++.ocr-layer-heading small { color: var(--muted); font-size: 11px; }
 diff --git a/checkpoint/redesign/complete.js b/checkpoint/redesign/complete.js
-index e5681ab..c199bf2 100644
+index e5681ab..b8fbfd8 100644
 --- a/checkpoint/redesign/complete.js
 +++ b/checkpoint/redesign/complete.js
-@@ -3,17 +3,33 @@ const F=JPTFeatures;let analyticsSection='landing',workspaceType='research',cale
+@@ -1,19 +1,35 @@
+ 'use strict';
+-const F=JPTFeatures;let analyticsSection='landing',workspaceType='research',calendarMonth=F.month(new Date()),calendarSelection='',calcMode='RISK',calcOutput=null,workspaceEdit=null,ocrSession=0,ocrFile=null,ocrFields=null,ocrTarget=null,evidenceTarget=null,ocrBusy=false,ocrRawRevision=null;
++const F=JPTFeatures;let analyticsSection='landing',workspaceType='research',calendarMonth=F.month(new Date()),calendarSelection='',calcMode='RISK',calcOutput=null,workspaceEdit=null,ocrSession=0,ocrFile=null,ocrFields=null,ocrTarget=null,evidenceTarget=null,ocrBusy=false,ocrRawRevision=null,ocrEdits={};
  const txt=(label,id,value='',type='text',attrs='')=>'<label class="field"><span>'+label+'</span><input id="'+id+'" type="'+type+'" value="'+esc(value)+'" '+attrs+'></label>',area=(label,id,value='')=>'<label class="field"><span>'+label+'</span><textarea id="'+id+'" maxlength="4000">'+esc(value)+'</textarea></label>',pick=(label,id,values,current)=>'<label class="field"><span>'+label+'</span><select id="'+id+'">'+values.map(v=>{let k=Array.isArray(v)?v[0]:v,n=Array.isArray(v)?v[1]:v;return'<option value="'+esc(k)+'" '+(k===current?'selected':'')+'>'+esc(n)+'</option>'}).join('')+'</select></label>',navBack=(title)=>'<button class="back" data-nav="more">← More</button><h1>'+title+'</h1>',keyVal=(k,v)=>'<div class="kv"><span>'+esc(k)+'</span><b>'+esc(v)+'</b></div>',value=id=>$('#'+id)?.value||'';
  function contextFields(){let ex=(db.experiments||[]).filter(e=>e.accountId===accountId&&e.status==='Active');return '<details><summary>Detail konteks & pencatatan</summary>'+pickDraft('Sesi (opsional)','session',['','Asia','London','New York','Overlap'])+pickDraft('Timeframe (opsional)','timeframe',['','M1','M5','M15','M30','H1','H4','D1'])+pickDraft('Jalur pencatatan','executionIntent',[['ALREADY_EXECUTED','Catat transaksi yang sudah terjadi'],['PRE_ENTRY','Periksa kuota sebelum mencatat eksekusi']])+ (dataset==='Experiment'?'<label class="field"><span>Hubungkan eksperimen aktif</span><select data-field="experimentId"><option value="">Tanpa tautan</option>'+ex.map(e=>'<option value="'+esc(e.id)+'" '+(draft.experimentId===e.id?'selected':'')+'>'+esc(e.title)+'</option>').join('')+'</select></label>':'')+'<p class="small">Strict hanya membantu alur jurnal; tidak mengendalikan order broker. Transaksi faktual tetap boleh dicatat.</p></details>'}
  function pickDraft(label,name,choices){return '<label class="field"><span>'+label+'</span><select data-field="'+name+'">'+choices.map(v=>{let k=Array.isArray(v)?v[0]:v,n=Array.isArray(v)?v[1]:v;return'<option value="'+esc(k)+'" '+(draft[name]===k?'selected':'')+'>'+esc(n||'Belum diisi')+'</option>'}).join('')+'</select></label>'}
@@ -869,7 +882,7 @@ index e5681ab..c199bf2 100644
  function calendarPage(){let days=F.calendar(db,accountId,dataset,calendarMonth),ym=calendarMonth,first=new Date(ym+'-01T12:00:00+07:00'),offset=(first.getUTCDay()+6)%7,total=new Date(Number(ym.slice(0,4)),Number(ym.slice(5,7)),0).getDate(),cells=Array(offset).fill('<span></span>');for(let i=1;i<=total;i++){let d=ym+'-'+String(i).padStart(2,'0'),x=days[d];cells.push('<button class="cal-day '+(x?.pnl>0?'profit':x?.pnl<0?'loss':'')+' '+(F.day(new Date())===d?'cal-today':'')+'" data-day="'+d+'" aria-label="'+d+' '+(x?x.ideas+' idea, '+x.layers+' layer':'tanpa idea')+'"><b>'+i+'</b><span class="dots">'+(x?x.ideas+'I · '+x.layers+'L':'—')+'</span><span class="dots">'+(x?.eligible?signed(x.pnl):'')+'</span></button>')}let detail='';if(calendarSelection){let all=ctx().all,idea=all.filter(t=>F.day(t.date)===calendarSelection),closed=all.filter(t=>C.ready(t).eligible&&F.day(JPTScoreEngine.tradeCloseDate(t).value)===calendarSelection);detail='<div class="card"><h3>'+calendarSelection+'</h3>'+keyVal('Idea date: ideas/layers',idea.length+' / '+idea.reduce((s,t)=>s+t.layers.length,0))+keyVal('Closed-date Actual P/L',signed(C.sum(closed.map(t=>C.ready(t).netPL)))+' '+ctx().acc.currency)+'<p class="small">Daftar berikut berdasarkan tanggal idea. P/L hari ini memakai close time; keduanya dapat berbeda.</p>'+rows(idea)+'</div>'}return '<main class="page">'+navBack('Calendar')+txt('Bulan (WIB)','calendar-month',ym,'month')+'<div class="cal-grid">'+['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(d=>'<span class="cal-head">'+d+'</span>').join('')+cells.join('')+'</div><p class="small">I = Trade Idea, L = layer, berdasarkan tanggal idea. Angka P/L berdasarkan tanggal CLOSED eligible, semua dalam WIB.</p>'+detail+'</main>'}
  function scoreboard(){let m=ctx(),closed=m.all.filter(t=>t.status==='CLOSED');return '<main class="page">'+navBack('Scoreboard')+'<div class="note">Empat domain independen. Rumus skor produksi ditunda; angka di bawah menunjukkan cakupan bukti, bukan nilai skor.</div>'+[['Performance',m.rN+' R-valid / '+m.n+' eligible CLOSED'],['Process Discipline',closed.filter(t=>t.reviewHistory?.length).length+' / '+closed.length+' process reviewed'],['Setup/Plan Quality',closed.filter(t=>t.setupReviews?.length).length+' / '+closed.length+' setup reviewed'],['Data Integrity',m.all.filter(t=>C.ready(t).eligible).length+' / '+closed.length+' CLOSED Actual-ready']].map(([k,v])=>'<div class="card"><h3>'+k+'</h3><p>'+v+'</p><p class="small">Skor: belum diaktifkan.</p></div>').join('')+'</main>'}
  function dataPage(){return '<main class="page">'+navBack('App & Data')+'<button class="btn full" data-a="backup">Export backup JSON lengkap</button><label class="field"><span>Import backup working copy</span><input id="import" type="file" accept="application/json,.json"></label><button class="row" data-a="sample">Tambah contoh sintetis '+icon('chevron')+'</button><button class="row" data-x="audit">Lihat Change History '+icon('chevron')+'</button><div class="note">Export mencakup trade, evidence lokal, review, setting dan workspace. Restore meminta konfirmasi. Jangan import backup format lama/produksi tanpa jalur migrasi.</div><p class="small">Tidak ada login/cloud pada versi lokal. Data file/origin browser dapat berbeda. Tidak ada janji autosync. '+db.audit.length+' audit events tersimpan.</p><button class="textbtn" data-x="coverage">Lihat cakupan & batas versi →</button></main>'}
-@@ -32,32 +48,268 @@ function detailMore(t){let ev=t.evidence||[],setup=t.setupReviews?.at(-1);return
+@@ -32,32 +48,239 @@ function detailMore(t){let ev=t.evidence||[],setup=t.setupReviews?.at(-1);return
  const setupQs=[['validSetup','Setup memenuhi kriteriamu?'],['thesisRecorded','Thesis/alasan entry tercatat?'],['plannedEntryValid','Planned entry valid?'],['plannedSLValid','Planned SL valid dan berbeda dari entry?'],['validTPAndRisk','Minimal satu TP dan planned risk valid?']];
  function setupSheet(id){let t=db.trades.find(x=>x.id===id),prev=t.setupReviews?.at(-1);sheet('Setup / Plan Review',pick('Grade sesuai penilaianmu','setup-grade',['','A+','A','B','C','D'],prev?.grade||'')+setupQs.map(([k,q])=>pick(q,'setup-'+k,[['','Belum dijawab'],['yes','Ya'],['no','Tidak']],prev?.criteria[k]===true?'yes':prev?.criteria[k]===false?'no':'')).join('')+(prev?area('Alasan revisi','setup-reason',''):'')+'<p class="small">Tidak ada skor numerik produksi. Review ini tidak mengisi SOP secara retroaktif.</p><button class="btn full" data-setup-save="'+esc(id)+'">Simpan review setup</button>')}
  function evidenceSheet(id){evidenceTarget=id;sheet('Tambah evidence',txt('Label','evidence-label','Screenshot / catatan MT5')+area('Catatan / referensi','evidence-note','')+'<label class="field"><span>Gambar opsional (JPG/PNG/WebP, maks 10 MB input)</span><input type="file" id="evidence-file" accept="image/jpeg,image/png,image/webp"></label><div id="evidence-preview"></div><p class="small">Gambar dikompresi lokal, metadata gambar dibuang. Batas evidence lokal diterapkan untuk menjaga storage. Tidak dikirim ke server OCR.</p><button class="btn full" data-x="save-evidence">Simpan evidence</button>');evidenceSheet.data=null}
@@ -915,181 +928,139 @@ index e5681ab..c199bf2 100644
 -function parseCapture(){if(ocrBusy&&!value('ocr-raw').trim())throw Error('Tunggu pembacaan gambar selesai.');let raw=value('ocr-raw'),offset=value('ocr-offset'),parsed=F.ocr(raw,C.parseNumber(offset,'Offset',2));ocrFields=parsed;ocrRawRevision={raw,offset};$('#sheet-error')?.remove();let labels={symbol:'Instrumen',side:'Arah',entry:'Entry',sl:'SL',tp:'TP',lot:'Lot',netPL:'Net P/L',profit:'Profit/Gross (belum net)',commission:'Komisi bertanda',swap:'Swap bertanda',otherCost:'Biaya lain bertanda',executedAt:'Waktu entry (WIB)',exitAt:'Waktu exit (WIB)'},n=Object.keys(parsed.fields).length;$('#ocr-fields').innerHTML='<div class="ocr-summary" role="status">'+(n?n+' field terdeteksi. Nilai yang kosong dapat diisi manual. Centang hanya field yang sudah kamu periksa.':'Teks terbaca, tetapi belum ada field yang dikenali. Periksa teks mentah atau isi nilai di bawah secara manual.')+'</div><p class="small">'+parsed.warnings.map(esc).join('<br>')+'</p>'+Object.keys(labels).map(k=>{let v=parsed.fields[k]??'',ready=v!=='';return '<div class="ocr-field"><label class="ocr-select" for="ocr-check-'+k+'"><input id="ocr-check-'+k+'" type="checkbox" data-ocr-check="'+k+'"><span>'+labels[k]+'</span></label><input id="ocr-value-'+k+'" class="input" data-ocr-value="'+k+'" aria-label="'+labels[k]+' yang akan diterapkan" '+(!['symbol','side','executedAt','exitAt'].includes(k)?'inputmode="decimal" ':'')+'placeholder="Belum terbaca · isi manual" value="'+esc(k.endsWith('At')&&v?toWIBinput(v):v)+'"><small>'+(ready?'Terdeteksi · cocokkan dengan screenshot.':'Belum terdeteksi · tidak diterapkan kecuali diisi dan dicentang.')+'</small></div>'}).join('')+pick('Perlakuan nilai P/L','ocr-semantics',[['UNKNOWN','Pilih jika menerapkan P/L'],['NET','Net sudah termasuk biaya'],['GROSS','Gross + biaya bertanda (semua diketahui)']],'UNKNOWN')+'<button class="btn full" data-x="apply-ocr">Terapkan field yang sudah diperiksa</button>';$('#ocr-progress').textContent=n?n+' field terdeteksi. Periksa kandidat di bawah.':'Format field belum dikenali. Periksa teks mentah atau isi nilai secara manual.';$('#ocr-fields').scrollIntoView({block:'start',behavior:motion?'auto':'smooth'});}
 -function toWIBinput(s){let p=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});return p.format(new Date(s)).replace(' ','T')}
 -function applyCapture(){if(ocrBusy)throw Error('Tunggu pembacaan OCR selesai.');if(!ocrRawRevision||ocrRawRevision.raw!==value('ocr-raw')||ocrRawRevision.offset!==value('ocr-offset'))throw Error('Teks atau offset berubah. Deteksi ulang kandidat sebelum menerapkan.');if(!ocrFields||!ocrTarget||draft!==ocrTarget.draft||accountId!==ocrTarget.accountId||dataset!==ocrTarget.dataset)throw Error('Konteks draft berubah; buka capture kembali');let selected={};document.querySelectorAll('[data-ocr-check]:checked').forEach(el=>{let k=el.dataset.ocrCheck;selected[k]=document.querySelector('[data-ocr-value="'+k+'"]').value});if(!Object.keys(selected).length)throw Error('Centang minimal satu field yang sudah diperiksa.');let labels={symbol:'Instrumen',side:'Arah',entry:'Entry',sl:'SL',tp:'TP',lot:'Lot',netPL:'Net P/L',profit:'Profit',commission:'Komisi',swap:'Swap',otherCost:'Biaya lain',executedAt:'Waktu entry',exitAt:'Waktu exit'};for(let[k,v]of Object.entries(selected))if(!String(v).trim())throw Error((labels[k]||k)+' belum terisi. Isi nilainya atau lepaskan centangnya.');let l=draft.layers[ocrTarget.layer];if(!l)throw Error('Layer tujuan berubah');let semantics=value('ocr-semantics');if('netPL'in selected&&semantics!=='NET')throw Error('Pilih semantik NET untuk menerapkan Net P/L yang sudah termasuk biaya');if(semantics==='GROSS'){if('netPL'in selected)throw Error('Jangan gabungkan Net P/L dengan mode Gross');if(!['profit','commission','swap','otherCost'].every(k=>k in selected))throw Error('Mode Gross memerlukan profit, komisi, swap dan biaya lain eksplisit; nilai nol harus dikonfirmasi');selected.netPL=C.sum(['profit','commission','swap','otherCost'].map(k=>C.parseNumber(selected[k],k,2)))}let clean={};for(let[k,v]of Object.entries(selected)){if(['symbol','side'].includes(k)){if(k==='side'&&!['Buy','Sell'].includes(v))throw Error('Arah harus Buy/Sell');clean[k]=String(v)}else if(['executedAt','exitAt'].includes(k)){iso(v);clean[k]=v}else clean[k]=C.parseNumber(v,k,['netPL','profit','commission','swap','otherCost'].includes(k)?2:8)}for(let[k,v]of Object.entries(clean)){if(['symbol','side'].includes(k))draft[k]=v;else if(['entry','sl','tp','lot','netPL','executedAt','exitAt'].includes(k))l[k]=String(v)}draft.ocrCapture={raw:ocrFields.raw,fields:clean,semantics,reviewedAt:new Date().toISOString(),targetLayer:'L'+(ocrTarget.layer+1),source:'USER_REVIEWED_OCR_CANDIDATE',actualConfirmed:false};draft.confirmActual=false;dirty=true;ocrSession++;closeSheet(true);render();toast('Kandidat diterapkan. Periksa form dan konfirmasi Actual secara terpisah.')}
-+const captureLabels={symbol:'Instrumen',side:'Arah',entry:'Entry',sl:'Stop loss',tp:'Take profit',lot:'Lot',netPL:'Net P/L',displayedPL:'Hasil di MT5',profit:'Profit / Gross',commission:'Komisi',swap:'Swap',otherCost:'Biaya lain',executedAt:'Waktu entry (WIB)',exitAt:'Waktu exit (WIB)'};
-+const captureIdentity=['symbol','side'];
++const captureLabels={symbol:'Instrumen',side:'Arah',entry:'Harga entry',sl:'Stop loss MT5',tp:'Take profit',lot:'Lot',netPL:'Net P/L',executedAt:'Waktu entry (WIB)',exitAt:'Waktu exit (WIB)'};
 +const captureTimes=['executedAt','exitAt'];
 +const captureLayerFields=['entry','sl','tp','lot','netPL',...captureTimes];
-+const captureMoney=['netPL','displayedPL','profit','commission','swap','otherCost'];
-+function resetCaptureCandidates(){
-+  if(ocrTarget?.auto&&ocrTarget.draft===draft){
-+    const {before,capture,confirmed,wasDirty}=ocrTarget.auto;
-+    for(const [k,v] of Object.entries(before))captureDestination(k)[k]=v;
-+    draft.ocrCapture=capture;
-+    draft.confirmActual=confirmed;
-+    dirty=wasDirty;
-+    ocrTarget.auto=null;
-+    if(dirty)storeLocalDraft();
-+    else clearLocalDraft();
-+  }
++const offsetKey=()=> 'jpt_mt5_offset:'+accountId;
++function resetCaptureCandidates(clearEdits=true){
++  if(clearEdits)ocrEdits={};
 +  ocrFields=null;
 +  ocrRawRevision=null;
 +  const fields=$('#ocr-fields');
 +  if(fields)fields.innerHTML='';
++  const actions=$('#ocr-actions');
++  if(actions)actions.hidden=true;
++  const zone=$('#ocr-zone');
++  if(zone)zone.hidden=true;
 +}
 +function openOcr(){
 +  if(route!=='new'||!draft){go('new');return}
 +  collectFields();
-+  ocrTarget={draft,layer:layerIndex,accountId,dataset,auto:null};
++  ocrTarget={draft,accountId,dataset};
 +  ocrSession++;
 +  ocrFile=null;
-+  ocrFields=null;
 +  ocrBusy=false;
-+  ocrRawRevision=null;
-+  sheet('Impor dari MT5 · L'+(layerIndex+1),'<p class="small">Unggah riwayat MT5. Kalau ada beberapa posisi, pilih tiket yang mau dimasukkan ke layer ini.</p>'
-+    +'<label class="ocr-upload"><span>Pilih screenshot</span><input id="ocr-file" type="file" accept="image/jpeg,image/png,image/webp"></label><details id="ocr-preview" hidden><summary>Pratinjau gambar</summary></details>'
-+    +'<p class="small" id="ocr-progress" role="status" aria-live="polite">Pilih gambar atau tempel teks MT5.</p>'
-+    +'<div id="ocr-fields" class="ocr-fields"></div>'
-+    +'<details class="ocr-options"><summary>Teks MT5 dan zona waktu</summary>'
-+    +area('Teks MT5 / hasil baca','ocr-raw','')+txt('Offset UTC server MT5 untuk waktu entry dan exit','ocr-offset','','text','inputmode="decimal" placeholder="Contoh: +2"')
-+    +'<p class="small">Isi offset sesuai server. Waktu dari OCR tampil dalam WIB.</p>'
++  let savedOffset='';
++  try{savedOffset=localStorage.getItem(offsetKey())??''}catch(_){}
++  sheet('Impor riwayat MT5','<div class="ocr-import"><label class="ocr-upload"><span>Pilih screenshot MT5</span><input id="ocr-file" type="file" accept="image/jpeg,image/png,image/webp"></label>'
++    +'<p id="ocr-progress" role="status" aria-live="polite">Satu screenshot dapat mengisi hingga tiga layer.</p>'
++    +'<div id="ocr-zone" class="ocr-zone" hidden>'+txt('Offset UTC server MT5','ocr-offset',savedOffset,'text','inputmode="decimal" placeholder="Contoh +3"')
++    +'<small>Waktu dikonversi ke WIB. Offset tersimpan untuk akun ini setelah impor.</small></div>'
++    +'<div id="ocr-fields" class="ocr-fields"></div><div id="ocr-actions" class="ocr-action-bar" hidden><button class="btn full" data-x="apply-ocr-batch">Gunakan hasil</button></div>'
++    +'<details class="ocr-options"><summary>Teks dan pembacaan ulang</summary>'+area('Teks hasil baca MT5','ocr-raw','')
 +    +'<div class="filter-actions"><button class="btn secondary" data-x="run-ocr" disabled>Baca ulang gambar</button><button class="btn" data-x="parse-ocr" disabled>Baca teks</button></div></details>'
-+    +'<button class="textbtn" data-x="ocr-manual">Lanjut isi manual</button>');
++    +'<details id="ocr-preview" hidden><summary>Lihat screenshot</summary></details><button class="textbtn" data-x="ocr-manual">Isi manual</button></div>');
++  resetCaptureCandidates();
 +  captureControls();
 +}
 +async function runOCR(){if(ocrBusy)return;if(!ocrFile)throw Error('Pilih screenshot terlebih dahulu');let token=++ocrSession,image=ocrFile,worker=null,timer=null,expired=false;ocrBusy=true;resetCaptureCandidates();$('#ocr-raw').value='';$('#sheet-error')?.remove();captureControls();const active=()=>token===ocrSession&&!!$('#ocr-raw');let timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{expired=true;reject(Error('Pembacaan OCR terlalu lama. Coba baca ulang atau tempel teks MT5.'))},90000)});try{let result=await Promise.race([(async()=>{if(active())$('#ocr-progress').textContent='Memuat engine OCR…';if(!window.Tesseract){await new Promise((res,rej)=>{let sc=document.createElement('script'),loadTimer=setTimeout(()=>{sc.remove();rej(Error('Unduhan engine OCR terlalu lama. Gunakan teks manual atau coba lagi.'))},15000);sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';sc.onload=()=>{clearTimeout(loadTimer);res()};sc.onerror=()=>{clearTimeout(loadTimer);sc.remove();rej(Error('Engine OCR tidak dapat dimuat. Periksa internet atau gunakan teks manual.'))};document.head.append(sc)})}if(!active()||expired)return null;worker=await Tesseract.createWorker('eng',1,{logger:m=>{if(active()&&!expired)$('#ocr-progress').textContent=m.status==='recognizing text'?'Membaca teks '+Math.round((m.progress||0)*100)+'%…':'Menyiapkan pembacaan OCR…'}});if(!active()||expired){await worker.terminate();worker=null;return null}return worker.recognize(image.bytes)})(),timeout]);if(!active()||!result)return;let raw=result.data.text||'';$('#ocr-raw').value=raw;modalDirty=true;if(!raw.trim()){$('#ocr-progress').textContent='Tidak ada teks yang terbaca. Coba screenshot yang lebih jelas atau tempel teks MT5.';return}parseCapture()}catch(err){if(active()){const message=String(err?.message||err);$('#ocr-progress').textContent=/file could not be read/i.test(message)?'OCR belum bisa membuka gambar. Coba Baca ulang gambar atau tempel teks MT5.':'OCR belum berhasil. '+message;$('.ocr-options').open=true}}finally{clearTimeout(timer);if(token===ocrSession){ocrBusy=false;captureControls()}if(worker)try{await worker.terminate()}catch(_){}}}
-+function captureDestination(key){
-+  return captureIdentity.includes(key)?draft:draft.layers[ocrTarget.layer];
++function toWIBinput(s){
++  const format=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
++  return format.format(new Date(s)).replace(' ','T');
 +}
-+function writeCapture(fields,semantics,source){
-+  for(const [key,val] of Object.entries(fields)){
-+    if(captureIdentity.includes(key)||captureLayerFields.includes(key))captureDestination(key)[key]=String(val);
-+  }
-+  const previous=draft.ocrCapture;
-+  const capture={raw:ocrFields.raw,fields,semantics,capturedAt:new Date().toISOString(),...(source==='USER_REVIEWED_OCR_CANDIDATE'?{reviewedAt:new Date().toISOString()}:{}),targetLayer:'L'+(ocrTarget.layer+1),...(ocrFields.ticket?{ticket:ocrFields.ticket}:{}),source,actualConfirmed:false};
-+  const priorLayers=previous?.byLayer||(previous?.targetLayer?{[previous.targetLayer]:previous}:{});
-+  draft.ocrCapture={...capture,byLayer:{...priorLayers,[capture.targetLayer]:capture}};
-+  draft.confirmActual=false;
-+  dirty=true;
-+}
-+function stageCapture(fields){
-+  const selected={}, before={};
-+  for(const [key,val] of Object.entries(fields)){
-+    if(!captureIdentity.includes(key)&&!captureLayerFields.includes(key))continue;
-+    const current=captureDestination(key)[key];
-+    const defaultIdentity=!draft.id&&!draft.ocrCapture&&!draft.ocrTouched?.[key]&&((key==='symbol'&&current==='XAUUSD')||(key==='side'&&current==='Buy'));
-+    const target=captureDestination(key);
-+    const defaultTime=captureTimes.includes(key)&&target.ocrClockDefaults?.[key]===current&&!target.ocrTouched?.[key];
-+    if(current!==''&&current!=null&&String(current)!==String(val)&&!defaultIdentity&&!defaultTime)continue;
-+    selected[key]=val;
-+    before[key]=current;
-+  }
-+  if(!Object.keys(selected).length)return selected;
-+  ocrTarget.auto={before,capture:draft.ocrCapture,confirmed:draft.confirmActual,wasDirty:dirty};
-+  writeCapture(selected,Object.hasOwn(selected,'netPL')?'NET':'UNKNOWN','OCR_CANDIDATE');
-+  storeLocalDraft();
-+  return selected;
-+}
-+function parseCapture(positionIndex=null){
-+  const raw=value('ocr-raw'), offset=value('ocr-offset').trim();
-+  if(!raw.trim())throw Error('Belum ada teks untuk dibaca.');
-+  resetCaptureCandidates();
++function parseCapture(keepEdits=false){
++  const raw=value('ocr-raw'),offset=value('ocr-offset').trim();
++  const mode=value('ocr-semantics')||'AUTO';
++  resetCaptureCandidates(!keepEdits);
 +  $('#sheet-error')?.remove();
-+  const positions=F.mt5Positions(raw);
-+  if(positions.length>1&&positionIndex===null){
-+    $('#ocr-progress').textContent=positions.length+' posisi terbaca. Pilih satu untuk L'+(ocrTarget.layer+1)+'.';
-+    $('#ocr-fields').innerHTML='<div class="ocr-position-list" role="group" aria-label="Posisi MT5">'+positions.map((pos,i)=>'<button class="ocr-position" data-ocr-position="'+i+'"><span><strong>'+esc(pos.symbol)+' · '+pos.side+'</strong><small>'+(pos.ticket?'Tiket #'+esc(pos.ticket):'Posisi '+(i+1))+'</small>'+(pos.closedAt?'<small>'+esc(pos.closedAt)+' · server</small>':'')+'</span><span>Pilih '+icon('chevron')+'</span></button>').join('')+'</div>';
-+    modalDirty=false;
-+    return;
-+  }
-+  const position=positions[positionIndex??0];
-+  const captures=draft.ocrCapture?.byLayer||{};
-+  if(position?.ticket&&Object.values(captures).some(c=>c.ticket===position.ticket&&c.targetLayer!=='L'+(ocrTarget.layer+1))){
-+    $('#ocr-progress').textContent='Tiket ini sudah dipakai di layer lain. Pilih posisi yang berbeda.';
-+    $('#ocr-fields').innerHTML='<button class="textbtn" data-x="parse-ocr">Kembali ke daftar posisi</button>';
-+    modalDirty=false;
-+    return;
-+  }
-+  const zone=offset===''?0:C.parseNumber(offset,'Offset',2);
-+  ocrFields=position?F.ocrMt5Position(position,zone):F.ocr(raw,zone);
++  const zone=offset===''?null:C.parseNumber(offset,'Offset',2);
++  ocrFields=F.ocrBatch(raw,zone);
 +  ocrRawRevision={raw,offset};
-+  const parsed={...ocrFields.fields};
-+  for(const k of captureTimes){
-+    if(offset==='')delete parsed[k];
-+    else if(parsed[k])parsed[k]=toWIBinput(parsed[k]);
-+  }
-+  const staged=stageCapture(parsed);
-+  const count=Object.keys(staged).length;
-+  const row=(k,v)=>'<div class="capture-row"><label for="ocr-value-'+k+'">'+captureLabels[k]+(k in staged?'<small>Sudah di draft</small>':'')+'</label>'
-+    +'<input id="ocr-value-'+k+'" class="input" data-ocr-value="'+k+'" value="'+esc(v)+'" '+(captureMoney.includes(k)||['entry','sl','tp','lot'].includes(k)?'inputmode="decimal"':'')+'>'
-+    +'<label class="capture-use"><input type="checkbox" data-ocr-check="'+k+'" '+(k in staged?'checked':'')+' aria-label="Gunakan '+captureLabels[k]+'"><span>Gunakan</span></label></div>';
-+  const missing=Object.keys(captureLabels).filter(k=>k!=='displayedPL'&&!(k in parsed)&&(!captureTimes.includes(k)||offset!==''));
-+  const editable=Object.entries(parsed).map(([k,v])=>row(k,v)).join('');
-+  $('#ocr-progress').textContent=count?count+' field masuk ke draft L'+(ocrTarget.layer+1)+'. Periksa hasil di bawah.':'Teks terbaca. Periksa kandidat atau isi nilai secara manual.';
-+  $('#ocr-fields').innerHTML=(positions.length>1?'<button class="textbtn" data-x="parse-ocr">Pilih posisi lain</button>':'')
-+    +(position?.ticket?'<p class="small">Tiket #'+esc(position.ticket)+'</p>':'')
-+    +('displayedPL'in parsed?'<p class="small">Hasil MT5 perlu diperiksa. Centang Gunakan pada hasil dan pilih NET atau GROSS.</p>':'')
-+    +(offset===''&&captureTimes.some(k=>k in ocrFields.fields)?'<p class="small">Waktu terdeteksi. Isi offset server untuk menggunakannya.</p><button class="textbtn" data-x="ocr-zone">Atur offset server</button>':'')
-+    +editable+'<details><summary>Isi field yang belum terbaca</summary>'+missing.map(k=>row(k,'')).join('')+'</details>'
-+    +pick('Perlakuan P/L','ocr-semantics',[['UNKNOWN','Pilih jika memakai P/L'],['NET','Net P/L sudah termasuk biaya'],['GROSS','Gross + biaya bertanda']],'netPL'in parsed?'NET':'UNKNOWN')
-+    +'<div class="ocr-action-bar"><div class="filter-actions"><button class="btn secondary" data-x="apply-ocr">Terapkan pilihan</button><button class="btn" data-x="open-ocr-layer">Buka L'+(ocrTarget.layer+1)+'</button></div>'
-+    +(draft.status!=='CLOSED'&&'displayedPL'in parsed?'<button class="textbtn" data-x="apply-ocr-closed">Terapkan sebagai CLOSED</button>':draft.status!=='CLOSED'&&'netPL'in staged?'<button class="textbtn" data-x="ocr-closed">Catat sebagai CLOSED</button>':'')+'</div>';
++  $('#ocr-zone').hidden=!ocrFields.some(row=>row.needsOffset||row.fields.executedAt||row.fields.exitAt);
++  $('#ocr-progress').textContent=ocrFields.length+' posisi terbaca · L1'+(ocrFields.length>1?'–L'+ocrFields.length:'');
++  renderCaptureBatch(mode);
 +  modalDirty=false;
 +}
-+function toWIBinput(s){let p=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});return p.format(new Date(s)).replace(' ','T')}
-+function openCapturedLayer(closed=false){
-+  if(closed){draft.status='CLOSED';dirty=true}
-+  const layer=draft.layers[ocrTarget.layer];
-+  if(ocrFields&&value('ocr-offset').trim()===''){
-+    for(const key of captureTimes){
-+      if(ocrFields.fields[key]&&layer.ocrClockDefaults?.[key]===layer[key]&&!layer.ocrTouched?.[key]){
-+        layer[key]='';
-+        dirty=true;
-+      }
-+    }
-+  }
-+  ocrTarget.auto=null;
-+  layerIndex=ocrTarget.layer;
++function batchLayer(row,index,mode){
++  const fields=row.fields;
++  const out={
++    entry:fields.entry??'',sl:fields.sl??'',tp:fields.tp??'',lot:fields.lot??'',
++    netPL:F.ocrBatchNet(fields,mode)??'',
++    executedAt:fields.executedAt?toWIBinput(fields.executedAt):'',
++    exitAt:fields.exitAt?toWIBinput(fields.exitAt):''
++  };
++  return {...out,...ocrEdits[index]};
++}
++function renderCaptureBatch(mode='AUTO'){
++  const netMissing=ocrFields.some((row,i)=>batchLayer(row,i,mode).netPL===''&&(row.fields.displayedPL!=null||row.fields.profit!=null));
++  const needsOffset=ocrFields.some(row=>row.needsOffset);
++  const first=ocrFields[0].fields;
++  const session=F.estimateOcrSession(ocrFields.map(r=>r.fields.executedAt).filter(Boolean).sort()[0]);
++  const replaces=draft.layers.some(layer=>[layer.entry,layer.sl,layer.tp,layer.lot,layer.netPL,layer.risk].some(v=>v!==''&&v!=null)||Object.keys(layer.ocrTouched||{}).length);
++  const rows=ocrFields.map((row,i)=>{
++    const fields=row.fields,layer=batchLayer(row,i,mode);
++    const metrics=[['Entry',layer.entry],['SL',layer.sl],['TP',layer.tp],['Lot',layer.lot]];
++    return '<article class="ocr-layer"><div class="ocr-layer-heading"><div><strong class="ocr-layer-index">L'+(i+1)+'</strong>'+(row.ticket?' <small>#'+esc(row.ticket)+'</small>':'')+'</div><strong class="ocr-layer-pl">'+(layer.netPL===''?'P/L perlu cek':esc(layer.netPL)+' '+esc(draft.currency))+'</strong></div>'
++      +'<dl class="ocr-quotes">'+metrics.map(([k,v])=>'<div><dt>'+k+'</dt><dd>'+esc(v===''?'—':v)+'</dd></div>').join('')+'</dl>'
++      +'<p class="ocr-layer-time">'+(layer.executedAt?'Entry '+esc(layer.executedAt.replace('T',' '))+(layer.exitAt&&layer.exitAt.slice(0,10)===layer.executedAt.slice(0,10)?' → '+esc(layer.exitAt.slice(11)):'')+' WIB':row.needsOffset?'Waktu menunggu offset':'Waktu entry belum terbaca')+'</p>'
++      +'<details class="ocr-edit"><summary>Periksa atau koreksi L'+(i+1)+'</summary><div class="fields">'+captureLayerFields.map(key=>{
++        const type=captureTimes.includes(key)?'datetime-local':'text';
++        return '<label class="field"><span>'+captureLabels[key]+'</span><input data-ocr-layer="'+i+'" data-ocr-key="'+key+'" type="'+type+'" '+(type==='datetime-local'?'step="1"':'inputmode="decimal"')+' value="'+esc(layer[key])+'"></label>';
++      }).join('')+'</div><p class="small">Harga exit '+esc(fields.exitPrice??'—')+' · Komisi '+esc(fields.commission??'—')+' · Swap '+esc(fields.swap??'—')+' · Hasil terbaca '+esc(fields.displayedPL??fields.profit??'—')+'</p></details></article>';
++  }).join('');
++  $('#ocr-fields').innerHTML='<div class="ocr-batch-head"><strong>'+esc(first.symbol||draft.symbol)+' · '+esc(first.side||draft.side)+'</strong><span>'+(session?'Perkiraan sesi '+session:'')+'</span></div>'
++    +rows
++    +(netMissing||mode!=='AUTO'?pick('Perlakuan P/L','ocr-semantics',[['AUTO','Otomatis jika biaya terbaca nol'],['NET','Angka MT5 sudah net'],['GROSS','Tambah komisi dan swap bertanda']],mode):'')
++    +(needsOffset?'<p class="small">Isi offset server untuk membawa waktu dan perkiraan sesi. Kamu juga bisa melengkapi waktu di draft.</p>':'')
++    +(replaces?'<p class="small">Impor ini akan mengganti instrumen, arah, dan layer dalam draft.</p>':'');
++  $('#ocr-actions button').textContent=(replaces?'Ganti dengan ':'Gunakan ')+ocrFields.length+' layer';
++  $('#ocr-actions').hidden=false;
++}
++function openCapturedLayer(){
++  layerIndex=0;
 +  step=1;
 +  if(dirty)storeLocalDraft();
 +  closeSheet(true);
 +  render();
 +  window.scrollTo(0,0);
 +}
-+function applyCapture(closed=false){
++function applyOcrBatch(){
 +  if(ocrBusy)throw Error('Tunggu pembacaan OCR selesai.');
-+  if(!ocrRawRevision||ocrRawRevision.raw!==value('ocr-raw')||ocrRawRevision.offset!==value('ocr-offset').trim())throw Error('Teks atau offset berubah. Pilih Baca teks lagi.');
++  const raw=value('ocr-raw'),offset=value('ocr-offset').trim();
++  if(!ocrRawRevision||ocrRawRevision.raw!==raw)throw Error('Teks berubah. Pilih Baca teks lagi.');
++  if(ocrRawRevision.offset!==offset)parseCapture(true);
 +  if(draft!==ocrTarget?.draft||accountId!==ocrTarget.accountId||dataset!==ocrTarget.dataset)throw Error('Konteks draft berubah. Buka impor kembali.');
-+  const selected=Object.fromEntries([...document.querySelectorAll('[data-ocr-check]:checked')].map(el=>[el.dataset.ocrCheck,value('ocr-value-'+el.dataset.ocrCheck).trim()]));
-+  if(!Object.keys(selected).length)throw Error('Pilih minimal satu field.');
-+  for(const [key,val] of Object.entries(selected))if(val==='')throw Error(captureLabels[key]+' belum diisi.');
-+  const semantics=value('ocr-semantics');
-+  if('netPL'in selected&&semantics!=='NET')throw Error('Pilih NET untuk memakai nilai Net P/L.');
-+  if('displayedPL'in selected){
-+    if(semantics==='UNKNOWN')throw Error('Tentukan apakah hasil MT5 adalah Net P/L atau Gross.');
-+    const key=semantics==='NET'?'netPL':'profit';
-+    if(key in selected)throw Error('Pilih satu nilai hasil P/L.');
-+    selected[key]=selected.displayedPL;
++  const mode=value('ocr-semantics')||'AUTO';
++  const byLayer={};
++  const layers=ocrFields.map((row,i)=>{
++    const values=batchLayer(row,i,mode);
++    const targetLayer='L'+(i+1);
++    const layer={...blankLayer(),ocrClockDefaults:{},risk:''};
++    for(const key of captureLayerFields){
++      const val=String(values[key]??'').trim();
++      if(val&&captureTimes.includes(key))iso(val);
++      else if(val)C.parseNumber(val,targetLayer+' '+captureLabels[key],key==='netPL'?2:8);
++      layer[key]=val;
++    }
++    byLayer[targetLayer]={raw:row.raw,fields:{...row.fields,...values},semantics:mode,targetLayer,ticket:row.ticket||null,source:'OCR_CANDIDATE',actualConfirmed:false,capturedAt:new Date().toISOString()};
++    return layer;
++  });
++  const first=ocrFields[0].fields;
++  const earliest=layers.map(layer=>layer.executedAt).filter(Boolean).sort()[0];
++  if(first.symbol)draft.symbol=first.symbol;
++  if(first.side)draft.side=first.side;
++  if(earliest&&!draft.parentTradeId&&!draft.ocrTouched?.date)draft.date=earliest.slice(0,10);
++  if(earliest&&!draft.ocrTouched?.session&&(!draft.session||draft.session===draft.ocrAutoSession)){
++    draft.session=F.estimateOcrSession(iso(earliest));
++    draft.ocrAutoSession=draft.session;
 +  }
-+  const grossKeys=['profit','commission','swap','otherCost'];
-+  if(semantics==='GROSS'&&!grossKeys.every(k=>k in selected))throw Error('Gross memerlukan profit, komisi, swap, dan biaya lain. Isi 0 jika memang nol.');
-+  const clean={};
-+  for(const [key,val] of Object.entries(selected)){
-+    if(key==='side'){
-+      if(!/^(buy|sell)$/i.test(val))throw Error('Arah harus Buy atau Sell.');
-+      clean[key]=val.toLowerCase()==='buy'?'Buy':'Sell';
-+    }else if(key==='symbol')clean[key]=val.toUpperCase();
-+    else if(captureTimes.includes(key)){iso(val);clean[key]=val}
-+    else clean[key]=C.parseNumber(val,captureLabels[key],captureMoney.includes(key)?2:8);
-+  }
-+  if(semantics==='GROSS')clean.netPL=C.sum(grossKeys.map(k=>clean[k]));
-+  if(closed&&!Object.hasOwn(clean,'netPL'))throw Error('Pilih dan periksa nilai hasil MT5 sebelum mencatat CLOSED.');
-+  const otherLayer=draft.layers.some((l,i)=>i!==ocrTarget.layer&&[l.entry,l.lot,l.netPL].some(v=>v!==''&&v!=null));
-+  if(otherLayer&&captureIdentity.some(k=>k in clean&&clean[k]!==draft[k]))throw Error('Simbol dan arah harus sama antar-layer. Catat posisi ini sebagai Trade Idea terpisah.');
-+  const original=ocrFields;
-+  resetCaptureCandidates();
-+  ocrFields=original;
-+  writeCapture(clean,semantics,'USER_REVIEWED_OCR_CANDIDATE');
-+  openCapturedLayer(closed);
++  if(ocrFields.every(row=>row.closed))draft.status='CLOSED';
++  draft.layers=layers;
++  draft.ocrCapture={...byLayer.L1,byLayer};
++  draft.confirmActual=false;
++  dirty=true;
++  try{if(offset!=='')localStorage.setItem(offsetKey(),offset);else localStorage.removeItem(offsetKey())}catch(_){}
++  openCapturedLayer();
 +}
  function coverageSheet(){sheet('Cakupan Core RC','<ul class="info-list"><li>Jurnal lokal: PLAN/OPEN/CLOSED, partial exit, frozen risk, SL events dan re-entry.</li><li>Analytics: Performance/Process/Risk/Edge; layer/setup/session/monthly dan Calendar.</li><li>Capture OCR: engine client-side memerlukan internet; kandidat diperiksa per field, tanpa auto-Actual.</li><li>More: akun/spec, target, quota prospectif, kalkulator, review, evidence, research/action/experiment dan backup.</li><li>Deferred sesuai scope: cloud realtime, MT5 langsung, Prop Firm Suite dan formula skor produksi.</li><li>Release gate: Android fisik, OCR gambar representatif dan origin produksi perlu pembuktian tersendiri.</li></ul><p class="small">Riwayat cashflow/migrasi backup lama dan netting broker kompleks belum memiliki kontrak final; tidak diterapkan diam-diam.</p>')}
  function showCalc(){let acc=ctx().acc,spec=(acc.specs||[]).find(s=>s.symbol===value('calc-spec')),x={mode:calcMode,balance:value('calc-balance'),percent:value('calc-percent'),entry:value('calc-entry'),sl:value('calc-sl'),lot:value('calc-lot'),side:value('calc-side'),rr:value('calc-rr'),weights:value('calc-weights'),pl:value('calc-pl')};calcOutput=F.calc(spec,x);let output=calcOutput,html='';if(calcMode==='MULTI')html=output.layers.map((l,i)=>keyVal('L'+(i+1),'Lot '+l.lot+' · risk '+fmt(l.risk)+' '+acc.currency)).join('')+keyVal('Total risk',fmt(output.risk)+' / '+fmt(output.budget));else {let labels={lot:'Lot sesuai step',rawLot:'Lot sebelum pembulatan',risk:'Estimasi risk ('+acc.currency+')',budget:'Batas risk ('+acc.currency+')',valid:'Memenuhi lot minimum',remainingBudget:'Sisa batas risk ('+acc.currency+')',balance:'Saldo hasil ('+acc.currency+')',netPL:'Net P/L ('+acc.currency+')',riskBudget:'Batas risk ('+acc.currency+')',sl:'Harga SL',distance:'Jarak harga',tp:'Harga TP',rr:'Target RR',profit:'Estimasi profit ('+acc.currency+')'};html=Object.entries(output).map(([k,v])=>keyVal(labels[k]||k,typeof v==='number'?v.toLocaleString('en-US',{maximumFractionDigits:8}):typeof v==='boolean'?(v?'Ya':'Tidak'):String(v))).join('')};$('#calc-result').innerHTML='<div class="result">'+html+'</div>'+(calcMode==='RISK'&&output.valid?'<button class="btn full" data-x="calc-to-plan">Tinjau sebagai PLAN baru</button>':'');calcOutput.input=x;calcOutput.symbol=spec?.symbol}
@@ -1097,8 +1068,7 @@ index e5681ab..c199bf2 100644
  async function handleCompleteClick(e){let b=e.target.closest('button');if(!b)return;try{
  if(b.dataset.an){analyticsSection=b.dataset.an;go('analytics');return}if(b.dataset.day){calendarSelection=b.dataset.day;render();return}if(b.dataset.calcMode){calcMode=b.dataset.calcMode;calcOutput=null;render();return}if(b.dataset.workType){workspaceType=b.dataset.workType;render();return}if(b.dataset.workNew){workspaceForm(b.dataset.workNew);return}if(b.dataset.workEdit){workspaceForm(workspaceType,b.dataset.workEdit);return}if(b.dataset.workStatus){workspaceStatus(b.dataset.workStatus);return}if(b.dataset.statusSave){commit(F.changeStatus(db,workspaceType,b.dataset.statusSave,value('work-status'),value('work-status-note')));closeSheet();render();toast('Status tersimpan');return}if(b.dataset.actionFrom){let x=(db.research||[]).find(x=>x.id===b.dataset.actionFrom);workspaceForm('actions',null,{...x,title:'Action: '+x.title,source:'RESEARCH'});return}if(b.dataset.coachAction){workspaceForm('actions',null,{title:b.dataset.title,problem:b.dataset.title,evidence:b.dataset.evidence,action:b.dataset.suggestion,source:'COACH_SUGGESTION'});return}if(b.dataset.researchName){workspaceForm('research',null,{title:'Hipotesis setup '+b.dataset.researchName,evidence:'Setup Analytics · '+b.dataset.researchName,source:'ANALYTICS'});return}if(b.dataset.cfgEdit){accountConfig(b.dataset.cfgEdit);return}if(b.dataset.cfgSave){let id=b.dataset.cfgSave;commit(F.account(db,{id:id==='NEW'?null:id,name:value('cfg-name'),currency:value('cfg-currency'),initial:value('cfg-initial')}));closeSheet();render();toast('Akun tersimpan');return}if(b.dataset.evidence){evidenceSheet(b.dataset.evidence);return}if(b.dataset.correction){correctionSheet(b.dataset.correction);return}if(b.dataset.correctionSave){commit(F.correction(db,detailId,b.dataset.correctionSave,value('correction-value'),value('correction-reason')));closeSheet();render();toast('Permintaan audit tersimpan, risk asli tetap');return}if(b.dataset.setupReview){setupSheet(b.dataset.setupReview);return}if(b.dataset.setupSave){let criteria={};setupQs.forEach(([k])=>{if(['yes','no'].includes(value('setup-'+k)))criteria[k]=value('setup-'+k)==='yes'});commit(F.setupReview(db,b.dataset.setupSave,{grade:value('setup-grade'),criteria,reason:value('setup-reason')}));closeSheet();render();toast('Setup review tersimpan');return}
 -let x=b.dataset.x;if(!x)return;if(['calendar','tools','coach','scoreboard','data'].includes(x)){go(x);return}if(['research','actions','experiments'].includes(x)){workspaceType=x;go('workspace');return}if(x==='settings'){settings();return}if(x==='review-center'){reviewCenter();return}if(x==='account-config'){accounts();return}if(x==='account-new'){accountConfig('NEW');return}if(x==='specs'){specSheet();return}if(x==='quota'){quotaSheet();return}if(x==='target'){targetSheet();return}if(x==='audit'){auditSheet();return}if(x==='coverage'){coverageSheet();return}if(x==='ocr'){openOcr();return}if(x==='run-ocr'){await runOCR();return}if(x==='parse-ocr'){parseCapture();modalDirty=true;return}if(x==='apply-ocr'){applyCapture();return}if(x==='calculate'){showCalc();return}if(x==='calc-to-plan'){let out=calcOutput;safeNavigate(()=>{newDraft();draft.symbol=out.symbol;draft.layers=[{...blankLayer(),entry:out.input.entry,sl:out.input.sl,lot:String(out.lot),risk:String(C.money(out.risk))}];draft.side=out.input.side;dirty=true;route='new';step=0;history.pushState({route},'','#new');render()});return}if(x==='save-spec'){commit(F.spec(db,accountId,{symbol:value('spec-symbol'),valuePerUnit:value('spec-value'),point:value('spec-point'),volumeMin:value('spec-min'),volumeStep:value('spec-step'),volumeMax:value('spec-max')}));closeSheet();render();toast('Spec tersimpan; histori memakai snapshot saat eksekusi');return}if(x==='save-policy'){commit(F.policy(db,accountId,{mode:value('quota-mode'),limit:C.parseNumber(value('quota-limit'),'Limit',0)}));closeSheet();render();toast('Policy aktif mulai sekarang');return}if(x==='save-target'){commit(F.target(db,accountId,{month:value('target-month'),unit:value('target-unit'),value:value('target-value')}));closeSheet();render();toast('Target tersimpan');return}if(x==='save-work'){let old=(db[workspaceType]||[]).find(z=>z.id===workspaceEdit);commit(F.workspace(db,workspaceType,{id:workspaceEdit,accountId,dataset,title:value('work-title'),problem:value('work-problem'),evidence:value('work-evidence'),hypothesis:value('work-hypothesis'),action:value('work-action'),target:value('work-target'),evaluation:value('work-evaluation'),source:old?.source||workspaceForm.source||'MANUAL'}));closeSheet();route='workspace';history.pushState({route},'','#workspace');render();toast('Record workspace tersimpan');return}if(x==='save-evidence'){commit(F.evidence(db,evidenceTarget,{kind:evidenceSheet.data?'IMAGE':'NOTE',data:evidenceSheet.data,label:value('evidence-label'),note:value('evidence-note')}));closeSheet();render();toast('Evidence lokal tersimpan');return}if(x==='restore-draft'){restoreLocalDraft();return}if(x==='drop-draft'){ask('Hapus draft lokal?','Hanya draft belum tersimpan yang dihapus, bukan record trade.',()=>{localStorage.removeItem(DRAFT_KEY);savedDraft=null;render()});return}if(x==='keep-modal'){document.querySelector('#discard-modal')?.remove();return}if(x==='discard-modal'){modalDirty=false;closeSheet(true);return}
-+if(b.dataset.ocrPosition!==undefined){parseCapture(Number(b.dataset.ocrPosition));return}
-+let x=b.dataset.x;if(!x)return;if(['calendar','tools','coach','scoreboard','data'].includes(x)){go(x);return}if(['research','actions','experiments'].includes(x)){workspaceType=x;go('workspace');return}if(x==='settings'){settings();return}if(x==='review-center'){reviewCenter();return}if(x==='account-config'){accounts();return}if(x==='account-new'){accountConfig('NEW');return}if(x==='specs'){specSheet();return}if(x==='quota'){quotaSheet();return}if(x==='target'){targetSheet();return}if(x==='audit'){auditSheet();return}if(x==='coverage'){coverageSheet();return}if(x==='ocr'){openOcr();return}if(x==='ocr-zone'){$('.ocr-options').open=true;$('#ocr-offset').focus();return}if(x==='run-ocr'){await runOCR();return}if(x==='parse-ocr'){parseCapture();return}if(x==='open-ocr-layer'||x==='ocr-closed'||x==='ocr-manual'){openCapturedLayer(x==='ocr-closed');return}if(x==='apply-ocr'||x==='apply-ocr-closed'){applyCapture(x==='apply-ocr-closed');return}if(x==='calculate'){showCalc();return}if(x==='calc-to-plan'){let out=calcOutput;safeNavigate(()=>{newDraft();draft.symbol=out.symbol;draft.layers=[{...blankLayer(),entry:out.input.entry,sl:out.input.sl,lot:String(out.lot),risk:String(C.money(out.risk))}];draft.side=out.input.side;dirty=true;route='new';step=0;history.pushState({route},'','#new');render()});return}if(x==='save-spec'){commit(F.spec(db,accountId,{symbol:value('spec-symbol'),valuePerUnit:value('spec-value'),point:value('spec-point'),volumeMin:value('spec-min'),volumeStep:value('spec-step'),volumeMax:value('spec-max')}));closeSheet();render();toast('Spec tersimpan; histori memakai snapshot saat eksekusi');return}if(x==='save-policy'){commit(F.policy(db,accountId,{mode:value('quota-mode'),limit:C.parseNumber(value('quota-limit'),'Limit',0)}));closeSheet();render();toast('Policy aktif mulai sekarang');return}if(x==='save-target'){commit(F.target(db,accountId,{month:value('target-month'),unit:value('target-unit'),value:value('target-value')}));closeSheet();render();toast('Target tersimpan');return}if(x==='save-work'){let old=(db[workspaceType]||[]).find(z=>z.id===workspaceEdit);commit(F.workspace(db,workspaceType,{id:workspaceEdit,accountId,dataset,title:value('work-title'),problem:value('work-problem'),evidence:value('work-evidence'),hypothesis:value('work-hypothesis'),action:value('work-action'),target:value('work-target'),evaluation:value('work-evaluation'),source:old?.source||workspaceForm.source||'MANUAL'}));closeSheet();route='workspace';history.pushState({route},'','#workspace');render();toast('Record workspace tersimpan');return}if(x==='save-evidence'){commit(F.evidence(db,evidenceTarget,{kind:evidenceSheet.data?'IMAGE':'NOTE',data:evidenceSheet.data,label:value('evidence-label'),note:value('evidence-note')}));closeSheet();render();toast('Evidence lokal tersimpan');return}if(x==='restore-draft'){restoreLocalDraft();return}if(x==='drop-draft'){ask('Hapus draft lokal?','Hanya draft belum tersimpan yang dihapus, bukan record trade.',()=>{localStorage.removeItem(DRAFT_KEY);savedDraft=null;render()});return}if(x==='keep-modal'){document.querySelector('#discard-modal')?.remove();return}if(x==='discard-modal'){modalDirty=false;closeSheet(true);return}
++let x=b.dataset.x;if(!x)return;if(['calendar','tools','coach','scoreboard','data'].includes(x)){go(x);return}if(['research','actions','experiments'].includes(x)){workspaceType=x;go('workspace');return}if(x==='settings'){settings();return}if(x==='review-center'){reviewCenter();return}if(x==='account-config'){accounts();return}if(x==='account-new'){accountConfig('NEW');return}if(x==='specs'){specSheet();return}if(x==='quota'){quotaSheet();return}if(x==='target'){targetSheet();return}if(x==='audit'){auditSheet();return}if(x==='coverage'){coverageSheet();return}if(x==='ocr'){openOcr();return}if(x==='run-ocr'){await runOCR();return}if(x==='parse-ocr'){parseCapture();return}if(x==='ocr-manual'){openCapturedLayer();return}if(x==='apply-ocr-batch'){applyOcrBatch();return}if(x==='calculate'){showCalc();return}if(x==='calc-to-plan'){let out=calcOutput;safeNavigate(()=>{newDraft();draft.symbol=out.symbol;draft.layers=[{...blankLayer(),entry:out.input.entry,sl:out.input.sl,lot:String(out.lot),risk:String(C.money(out.risk))}];draft.side=out.input.side;dirty=true;route='new';step=0;history.pushState({route},'','#new');render()});return}if(x==='save-spec'){commit(F.spec(db,accountId,{symbol:value('spec-symbol'),valuePerUnit:value('spec-value'),point:value('spec-point'),volumeMin:value('spec-min'),volumeStep:value('spec-step'),volumeMax:value('spec-max')}));closeSheet();render();toast('Spec tersimpan; histori memakai snapshot saat eksekusi');return}if(x==='save-policy'){commit(F.policy(db,accountId,{mode:value('quota-mode'),limit:C.parseNumber(value('quota-limit'),'Limit',0)}));closeSheet();render();toast('Policy aktif mulai sekarang');return}if(x==='save-target'){commit(F.target(db,accountId,{month:value('target-month'),unit:value('target-unit'),value:value('target-value')}));closeSheet();render();toast('Target tersimpan');return}if(x==='save-work'){let old=(db[workspaceType]||[]).find(z=>z.id===workspaceEdit);commit(F.workspace(db,workspaceType,{id:workspaceEdit,accountId,dataset,title:value('work-title'),problem:value('work-problem'),evidence:value('work-evidence'),hypothesis:value('work-hypothesis'),action:value('work-action'),target:value('work-target'),evaluation:value('work-evaluation'),source:old?.source||workspaceForm.source||'MANUAL'}));closeSheet();route='workspace';history.pushState({route},'','#workspace');render();toast('Record workspace tersimpan');return}if(x==='save-evidence'){commit(F.evidence(db,evidenceTarget,{kind:evidenceSheet.data?'IMAGE':'NOTE',data:evidenceSheet.data,label:value('evidence-label'),note:value('evidence-note')}));closeSheet();render();toast('Evidence lokal tersimpan');return}if(x==='restore-draft'){restoreLocalDraft();return}if(x==='drop-draft'){ask('Hapus draft lokal?','Hanya draft belum tersimpan yang dihapus, bukan record trade.',()=>{localStorage.removeItem(DRAFT_KEY);savedDraft=null;render()});return}if(x==='keep-modal'){document.querySelector('#discard-modal')?.remove();return}if(x==='discard-modal'){modalDirty=false;closeSheet(true);return}
  }catch(err){showError(err.message)}}
  document.addEventListener('click',handleCompleteClick);
 -document.addEventListener('change',async e=>{try{if(e.target.id==='analytics-period'){period=e.target.value;render()}if(e.target.id==='calendar-month'){if(!/^\d{4}-\d{2}$/.test(e.target.value))return;calendarMonth=e.target.value;calendarSelection='';render()}if(e.target.id==='spec-pick'){let s=ctx().acc.specs?.find(s=>s.symbol===e.target.value);if(s)for(let [k,v]of Object.entries({'spec-symbol':s.symbol,'spec-value':s.valuePerUnit,'spec-point':s.point,'spec-min':s.volumeMin,'spec-step':s.volumeStep,'spec-max':s.volumeMax}))$('#'+k).value=v}if(e.target.id==='evidence-file'){let input=e.target,token=evidenceTarget;let data=await imageData(input.files[0]);if(token!==evidenceTarget||!$('#evidence-preview'))return;evidenceSheet.data=data;$('#evidence-preview').innerHTML='<img class="evidence-img" alt="Preview evidence" src="'+esc(data)+'">';modalDirty=true}if(e.target.id==='ocr-file'){let file=e.target.files[0];if(!file)return;ocrSession++;ocrBusy=false;ocrFile=null;resetCaptureCandidates();$('#ocr-raw').value='';captureControls();if(file.size>10*1024*1024||!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Pilih gambar JPG/PNG/WebP maksimal 10 MB');let token=ocrSession,data=await imageData(file);if(token!==ocrSession||!$('#ocr-preview'))return;ocrFile=file;$('#ocr-preview').innerHTML='<img class="evidence-img" alt="Preview screenshot MT5" src="'+esc(data)+'">';modalDirty=true;captureControls();await runOCR()}}catch(err){showError(err.message)}});
@@ -1130,7 +1100,7 @@ index e5681ab..c199bf2 100644
 +}}catch(err){showError(err.message)}});
  // Modal draft guard, independent of the trade draft.
 -let modalDirty=false;const closeBase=closeSheet,commitBase=commit,sheetBase=sheet;commit=function(n){commitBase(n);modalDirty=false;$('#discard-modal')?.remove()};sheet=function(title,html){modalDirty=false;sheetBase(title,html)};closeSheet=function(force=false){if(modalDirty&&!force){if(!$('#discard-modal')){$('#sheet-body').insertAdjacentHTML('afterbegin','<div class="note" id="discard-modal" role="alert">Perubahan panel belum disimpan.<div class="toolbar"><button class="btn secondary" data-x="keep-modal">Lanjut mengisi</button><button class="btn danger" data-x="discard-modal">Buang perubahan</button></div></div>')}return}modalDirty=false;ocrSession++;closeBase()};$('#close').onclick=()=>closeSheet();$('#dialog').addEventListener('cancel',e=>{e.preventDefault();closeSheet()});document.addEventListener('input',e=>{if(e.target.closest('#sheet-body')&&!e.target.closest('#discard-modal')&&e.target.id!=='motion')modalDirty=true});document.addEventListener('change',e=>{if(e.target.closest('#sheet-body')&&!['motion','spec-pick'].includes(e.target.id))modalDirty=true});
-+let modalDirty=false;const closeBase=closeSheet,commitBase=commit,sheetBase=sheet;commit=function(n){commitBase(n);modalDirty=false;$('#discard-modal')?.remove()};sheet=function(title,html,variant){modalDirty=false;sheetBase(title,html,variant)};closeSheet=function(force=false){if(modalDirty&&!force){if(!$('#discard-modal')){$('#sheet-body').insertAdjacentHTML('afterbegin','<div class="note" id="discard-modal" role="alert">Perubahan panel belum disimpan.<div class="toolbar"><button class="btn secondary" data-x="keep-modal">Lanjut mengisi</button><button class="btn danger" data-x="discard-modal">Buang perubahan</button></div></div>')}return}const refresh=Boolean($('#ocr-raw')&&ocrTarget?.auto);modalDirty=false;ocrSession++;closeBase();if(refresh)render()};$('#close').onclick=()=>closeSheet();$('#dialog').addEventListener('cancel',e=>{e.preventDefault();closeSheet()});document.addEventListener('input',e=>{if(e.target.closest('#sheet-body')&&!e.target.closest('#discard-modal,.journal-filter-fields')&&e.target.id!=='motion')modalDirty=true});document.addEventListener('change',e=>{if(e.target.closest('#sheet-body')&&!e.target.closest('.journal-filter-fields')&&!['motion','spec-pick'].includes(e.target.id))modalDirty=true});
++let modalDirty=false;const closeBase=closeSheet,commitBase=commit,sheetBase=sheet;commit=function(n){commitBase(n);modalDirty=false;$('#discard-modal')?.remove()};sheet=function(title,html,variant){modalDirty=false;sheetBase(title,html,variant)};closeSheet=function(force=false){if(modalDirty&&!force){if(!$('#discard-modal')){$('#sheet-body').insertAdjacentHTML('afterbegin','<div class="note" id="discard-modal" role="alert">Perubahan panel belum disimpan.<div class="toolbar"><button class="btn secondary" data-x="keep-modal">Lanjut mengisi</button><button class="btn danger" data-x="discard-modal">Buang perubahan</button></div></div>')}return}modalDirty=false;ocrSession++;closeBase()};$('#close').onclick=()=>closeSheet();$('#dialog').addEventListener('cancel',e=>{e.preventDefault();closeSheet()});document.addEventListener('input',e=>{if(e.target.closest('#sheet-body')&&!e.target.closest('#discard-modal,.journal-filter-fields')&&e.target.id!=='motion')modalDirty=true});document.addEventListener('change',e=>{if(e.target.closest('#sheet-body')&&!e.target.closest('.journal-filter-fields')&&!['motion','spec-pick'].includes(e.target.id))modalDirty=true});
  // Debounced draft persistence uses a distinct working-copy-only key.
 -const DRAFT_KEY='jpt_redesign_draft_v1';let savedDraft=null,draftTimer;try{let raw=localStorage.getItem(DRAFT_KEY);if(raw)savedDraft=JSON.parse(raw)}catch(_){}function storeLocalDraft(){if(route!=='new'||!draft||!dirty)return;try{savedDraft={draft:C.clone(draft),step,layerIndex,at:new Date().toISOString()};localStorage.setItem(DRAFT_KEY,JSON.stringify(savedDraft));if($('#draft-status'))$('#draft-status').textContent='Draft lokal tersimpan · '+stamp(savedDraft.at)}catch(e){if($('#draft-status'))$('#draft-status').textContent='Draft belum tersimpan: '+e.message}}function scheduleDraft(){clearTimeout(draftTimer);if(route==='new'&&dirty)draftTimer=setTimeout(storeLocalDraft,450);}function restoreLocalDraft(){let s=savedDraft,d=s?.draft,a=db.accounts.find(a=>a.id===d?.accountId);if(!a||!d||!['Buy','Sell'].includes(d.side)||!['PLAN','OPEN','CLOSED'].includes(d.status)||!Array.isArray(d.layers)||d.layers.length<1||d.layers.length>3||d.currency!==a.currency||!['Live','Experiment'].includes(d.dataset)||d.id&&db.trades.find(t=>t.id===d.id)?.status!=='PLAN')throw Error('Draft tidak cocok dengan data akun saat ini');accountId=a.id;dataset=d.dataset;draft=C.clone(d);step=Math.min(1,Math.max(0,s.step||0));layerIndex=Math.min(d.layers.length-1,Math.max(0,s.layerIndex||0));dirty=true;route='new';history.pushState({route},'','#new');render();window.scrollTo(0,0)}const renderWithFeatures=render;render=function(){renderWithFeatures();if(route==='new'){$('.steps')?.insertAdjacentHTML('afterend','<p class="small" id="draft-status">Draft belum menjadi record trade.</p>')}else if(savedDraft)$('#app').insertAdjacentHTML('afterbegin','<div class="note">Ada draft trade lokal yang belum disimpan.<button class="textbtn" data-x="restore-draft">Pulihkan draft →</button><button class="textbtn" data-x="drop-draft">Hapus draft</button></div>')};document.addEventListener('input',scheduleDraft);document.addEventListener('change',scheduleDraft);document.addEventListener('click',()=>{queueMicrotask(scheduleDraft)});window.addEventListener('beforeunload',e=>{if(modalDirty){e.preventDefault();e.returnValue=''}if(dirty)storeLocalDraft()});render();
 +const DRAFT_KEY='jpt_redesign_draft_v1';let savedDraft=null,draftTimer;try{let raw=localStorage.getItem(DRAFT_KEY);if(raw)savedDraft=JSON.parse(raw)}catch(_){}function storeLocalDraft(){if(route!=='new'||!draft||!dirty)return;try{savedDraft={draft:C.clone(draft),step,layerIndex,at:new Date().toISOString()};localStorage.setItem(DRAFT_KEY,JSON.stringify(savedDraft));if($('#draft-status'))$('#draft-status').textContent='Draft lokal tersimpan · '+stamp(savedDraft.at)}catch(e){if($('#draft-status'))$('#draft-status').textContent='Draft belum tersimpan: '+e.message}}function scheduleDraft(){clearTimeout(draftTimer);if(route==='new'&&dirty)draftTimer=setTimeout(storeLocalDraft,450);}function restoreLocalDraft(){let s=savedDraft,d=s?.draft,a=db.accounts.find(a=>a.id===d?.accountId);if(!a||!d||!['Buy','Sell'].includes(d.side)||!['PLAN','OPEN','CLOSED'].includes(d.status)||!Array.isArray(d.layers)||d.layers.length<1||d.layers.length>3||d.currency!==a.currency||!['Live','Experiment'].includes(d.dataset)||d.id&&db.trades.find(t=>t.id===d.id)?.status!=='PLAN')throw Error('Draft tidak cocok dengan data akun saat ini');accountId=a.id;dataset=d.dataset;draft=C.clone(d);step=Math.min(1,Math.max(0,s.step||0));layerIndex=Math.min(d.layers.length-1,Math.max(0,s.layerIndex||0));dirty=true;route='new';history.pushState({route},'','#new');render();window.scrollTo(0,0)}const renderWithFeatures=render;
@@ -1150,10 +1120,24 @@ index e5681ab..c199bf2 100644
  document.addEventListener('click',e=>{if(e.target.closest('[data-a="save"]')&&!dirty&&!draft){clearLocalDraft();render()}});
  
 -document.addEventListener('input',e=>{if(['ocr-raw','ocr-offset'].includes(e.target.id)){resetCaptureCandidates();captureControls();if($('#ocr-progress'))$('#ocr-progress').textContent='Teks/offset diperbarui. Pilih Deteksi kandidat field untuk meninjau hasil terbaru.'}});
-+document.addEventListener('input',e=>{if(['ocr-raw','ocr-offset'].includes(e.target.id)){resetCaptureCandidates();captureControls();if($('#ocr-progress'))$('#ocr-progress').textContent='Teks/offset diperbarui. Pilih Baca teks untuk meninjau hasil terbaru.'}});
++document.addEventListener('input',e=>{
++  if(e.target.id==='ocr-raw'){
++    resetCaptureCandidates();
++    captureControls();
++    $('#ocr-progress').textContent='Teks berubah. Pilih Baca teks untuk memeriksa hasil terbaru.';
++  }
++  const {ocrLayer,ocrKey}=e.target.dataset;
++  if(ocrLayer!==undefined&&ocrKey)(ocrEdits[ocrLayer]??={})[ocrKey]=e.target.value;
++});
++document.addEventListener('change',e=>{
++  try{
++    if(e.target.id==='ocr-offset'&&value('ocr-raw').trim())parseCapture(true);
++    if(e.target.id==='ocr-semantics'&&ocrFields)renderCaptureBatch(e.target.value);
++  }catch(err){showError(err.message)}
++});
 --- a/checkpoint/redesign/features.js
 +++ b/checkpoint/redesign/features.js
-@@ -23,6 +23,45 @@
+@@ -23,6 +23,85 @@
  function workspace(db,type,input){if(!['research','actions','experiments'].includes(type))fail('Workspace salah');return mutate(db,type.toUpperCase()+'_SAVED',n=>{let list=n[type]||(n[type]=[]),old=list.find(x=>x.id===input.id),title=String(input.title||'').trim();if(!title)fail('Judul wajib diisi');let item={id:old?.id||C.uid(),accountId:input.accountId,dataset:input.dataset,title:title.slice(0,200),problem:String(input.problem||'').slice(0,2000),evidence:String(input.evidence||'').slice(0,2000),hypothesis:String(input.hypothesis||'').slice(0,2000),action:String(input.action||'').slice(0,2000),target:String(input.target||'').slice(0,1000),evaluation:String(input.evaluation||'').slice(0,2000),source:input.source||'MANUAL',createdAt:old?.createdAt||now(),updatedAt:now(),status:type==='research'?'Note':old?.status||'Draft',history:clone(old?.history||[])};if(item.status==='Active'&&!['problem','evidence','hypothesis','action','target'].every(k=>String(item[k]||'').trim()))fail('Rencana Active harus tetap lengkap');if(old)list[list.indexOf(old)]=item;else list.push(item)})}
  function changeStatus(db,type,id,status,evaluation){return mutate(db,'WORKSPACE_STATUS_CHANGED',n=>{let x=(n[type]||[]).find(x=>x.id===id);if(!x)fail('Record tidak ditemukan');let allowed=type==='experiments'?transition[x.status]||[]:({Draft:['Active','Canceled'],Active:['Completed','Canceled'],Completed:[],Canceled:[]}[x.status]||[]);if(!allowed.includes(status))fail('Transisi status tidak sah');if(status==='Active'&&!['problem','evidence','hypothesis','action','target'].every(k=>String(x[k]||'').trim()))fail('Lengkapi masalah, evidence, hipotesis, tindakan dan target sebelum Active');if(['Accepted','Rejected','Inconclusive','Completed'].includes(status)&&!String(evaluation||'').trim())fail('Evaluasi wajib untuk menutup tahap');x.status=status;x.evaluation=String(evaluation||'');x.updatedAt=now();x.history=x.history||[];x.history.push({status,at:now(),evaluation:x.evaluation})})}
  function correction(db,id,layerId,amount,reason){return mutate(db,'RISK_CORRECTION_REQUESTED',n=>{let t=n.trades.find(x=>x.id===id),l=t?.layers.find(x=>x.layerId===layerId),s=l?.initialRiskSnapshot;if(!s)fail('Snapshot tidak tersedia');let a=num(amount,'Usulan risk',2);if(a<=0||!String(reason).trim())fail('Risk/reason wajib');let result=globalThis.JPTRiskSnapshot.recordRiskCorrection(s,{eventId:C.uid(),at:now(),actor:'LOCAL_USER',reason,proposed:{riskAmount:a,currency:t.currency}},t.riskCorrections||[]);if(!result.ok)fail(result.code);t.riskCorrections=t.riskCorrections||[];t.riskCorrections.push(result.event)})}
@@ -1192,6 +1176,9 @@ index e5681ab..c199bf2 100644
 +  out.fields.symbol=position.symbol;
 +  out.fields.side=position.side;
 +  // An unlabeled history amount is a candidate. The user decides whether it is net.
++  if(pair?.[2]){
++    try{out.fields.exitPrice=num(compact(pair[2]),'Harga exit',8)}catch(_){}
++  }
 +  if(pair?.[3]){
 +    try{out.fields.displayedPL=num(compact(pair[3]),'Hasil MT5',2)}catch(_){}
 +  }
@@ -1199,11 +1186,48 @@ index e5681ab..c199bf2 100644
 +  out.ticket=position.ticket;
 +  return out;
 +}
-+return{validate,validateSpec,day,month,account,spec,lot,calc,policy,quota,prepare,firstFill,risk,target,monthly,calendar,group,evidence,setupReview,workspace,changeStatus,correction,ocr,mt5Positions,ocrMt5Position,mutate};
++function ocrBatch(text,offset=null){
++  const positions=mt5Positions(text);
++  if(positions.length>3)fail('Screenshot berisi lebih dari 3 posisi. Potong menjadi satu Trade Idea.');
++  const rows=positions.length?positions.map(pos=>ocrMt5Position(pos,offset??0)):[ocr(text,offset??0)];
++  if(!positions.length&&!Object.keys(rows[0].fields).length)fail('Kolom trade belum dikenali. Periksa teks atau isi manual.');
++  const symbols=new Set(rows.map(row=>row.fields.symbol).filter(Boolean));
++  const sides=new Set(rows.map(row=>row.fields.side).filter(Boolean));
++  if(symbols.size>1||sides.size>1)fail('Simbol atau arah berbeda. Impor setiap Trade Idea secara terpisah.');
++  const tickets=rows.map(row=>row.ticket).filter(Boolean);
++  if(new Set(tickets).size!==tickets.length)fail('Ada tiket ganda. Periksa teks sebelum mengimpor.');
++  return rows.map(row=>{
++    const fields={...row.fields};
++    if(offset===null){delete fields.executedAt;delete fields.exitAt}
++    return {...row,fields,closed:Boolean(row.fields.exitAt),needsOffset:offset===null&&Boolean(row.fields.executedAt||row.fields.exitAt)};
++  });
++}
++function ocrBatchNet(fields,mode='AUTO'){
++  if(fields.netPL!=null)return fields.netPL;
++  const amount=fields.displayedPL??fields.profit;
++  if(amount==null)return null;
++  if(mode==='NET')return amount;
++  const hasFees=fields.commission!=null&&fields.swap!=null;
++  if(!hasFees)return null;
++  const fees=[fields.commission,fields.swap,fields.otherCost??0];
++  if(mode==='GROSS')return C.sum([amount,...fees]);
++  return fields.displayedPL!=null&&fees.every(fee=>fee===0)?amount:null;
++}
++function estimateOcrSession(at){
++  if(!at||!Number.isFinite(Date.parse(at)))return '';
++  const hour=zone=>Number(new Intl.DateTimeFormat('en-GB',{timeZone:zone,hour:'2-digit',hourCycle:'h23'}).format(new Date(at)));
++  const tokyo=hour('Asia/Tokyo'),london=hour('Europe/London'),ny=hour('America/New_York');
++  const inLondon=london>=8&&london<17,inNY=ny>=8&&ny<17;
++  if(inLondon&&inNY)return 'Overlap';
++  if(inNY)return 'New York';
++  if(inLondon)return 'London';
++  return tokyo>=9&&tokyo<18?'Asia':'';
++}
++return{validate,validateSpec,day,month,account,spec,lot,calc,policy,quota,prepare,firstFill,risk,target,monthly,calendar,group,evidence,setupReview,workspace,changeStatus,correction,ocr,mt5Positions,ocrMt5Position,ocrBatch,ocrBatchNet,estimateOcrSession,mutate};
  });
 --- a/checkpoint/redesign/tests/features.test.cjs
 +++ b/checkpoint/redesign/tests/features.test.cjs
-@@ -54,4 +54,27 @@
+@@ -54,4 +54,51 @@
  test('active workspace cannot erase its required plan',()=>{let a=F.workspace(db,'actions',{accountId:'cent',dataset:'Live',title:'A',problem:'P',evidence:'E',hypothesis:'H',action:'A',target:'T'});a=F.changeStatus(a,'actions',a.actions[0].id,'Active','');assert.throws(()=>F.workspace(a,'actions',{...a.actions[0],target:''}),/tetap lengkap/)});
  test('OCR explicit SL and TP labels recognized',()=>{let x=F.ocr('SL: 2690\nTP: 2720');assert.equal(x.fields.sl,2690);assert.equal(x.fields.tp,2720)});
  test('empty OCR text is rejected instead of blank candidate list',()=>assert.throws(()=>F.ocr('  \n  '),/Belum ada teks OCR/));
@@ -1229,5 +1253,29 @@ index e5681ab..c199bf2 100644
 +  assert.equal(Math.abs(second.fields.displayedPL),0);
 +  assert.equal(second.fields.netPL,undefined);
 +  assert.equal(second.fields.executedAt,'2026-10-09T22:20:09.000Z');
++});
++test('OCR batch uses every position in image order and converts times only with server offset',()=>{
++  const row=i=>'XAUUSDc, sell 0.08 2026.10.10 06:22:27\n3 291.234 → 3 273.244 '+i+'.00\n#123450000'+i+' Buka: 2026.10.10 05:20:08\nS/L 3 299.334 Swap: 0.00\nT/P 3 273.244 Komisi: 0.00';
++  for(const n of [1,2,3]){
++    const raw=Array.from({length:n},(_,i)=>row(i)).join('\n');
++    const noZone=F.ocrBatch(raw);
++    assert.equal(noZone.length,n);
++    assert.equal(noZone[0].fields.executedAt,undefined);
++    assert.equal(noZone[0].needsOffset,true);
++    const rows=F.ocrBatch(raw,3);
++    assert.deepEqual(rows.map(r=>F.ocrBatchNet(r.fields)),Array.from({length:n},(_,i)=>i));
++    assert.equal(rows[0].fields.executedAt,'2026-10-10T02:20:08.000Z');
++    assert.equal(F.estimateOcrSession(rows[0].fields.executedAt),'Asia');
++  }
++  assert.throws(()=>F.ocrBatch([0,1,2,3].map(row).join('\n')),/lebih dari 3/);
++  assert.throws(()=>F.ocrBatch([row(0),row(0)].join('\n')),/tiket ganda/);
++  assert.throws(()=>F.ocrBatch([row(0),row(1).replace('sell','buy')].join('\n')),/arah berbeda/);
++});
++test('OCR batch P/L handles costs once and leaves unknown fees unresolved',()=>{
++  assert.equal(F.ocrBatchNet({displayedPL:123,commission:-2,swap:-1}),null);
++  assert.equal(F.ocrBatchNet({displayedPL:123,commission:-2,swap:-1},'NET'),123);
++  assert.equal(F.ocrBatchNet({displayedPL:123,commission:-2,swap:-1},'GROSS'),120);
++  assert.equal(F.ocrBatchNet({displayedPL:123,commission:-2},'GROSS'),null);
++  assert.equal(F.ocrBatchNet({netPL:0,displayedPL:123,commission:-2,swap:-1},'GROSS'),0);
 +});
  console.log('TOTAL '+count+' PASS');

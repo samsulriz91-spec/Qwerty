@@ -105,3 +105,13 @@ OCR gambar MT5 nyata, serta deployment produksi belum dilakukan pada redesign.
   pratinjau pengguna diperiksa privat dan tidak dimasukkan ke repo.
 - Akses CDN langsung dari browser uji gagal. Perilaku CDN dan
   `content://` pada HP Android pengguna masih perlu diperiksa.
+
+## Impor MT5 1–3 layer
+
+- 111 tes unit dan regresi lulus. Patch diterapkan ulang pada OCR1 bersih.
+- Chromium pada 320/360/375/390/412/768/1280 CSS px menguji impor satu, dua,
+  dan tiga posisi, penggunaan ulang offset, P/L nol, sesi, serta penyimpanan.
+- Tesseract.js/WASM dengan aset uji lokal membaca screenshot MT5 asli pengguna
+  dan menyimpan dua layer dalam satu Trade Idea uji setelah Review. Screenshot
+  pengguna dan tiket aslinya tidak disertakan dalam repo atau paket publik.
+- Jalur CDN dan `content://` pada Chrome Android pengguna masih perlu diuji.
