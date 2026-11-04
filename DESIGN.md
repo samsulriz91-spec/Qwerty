@@ -118,3 +118,23 @@ Bottom nav berbentuk pil dengan indikator aktif dan FAB bulat untuk New Trade.
 Konfirmasi penting memakai dialog di tengah. Filter dan pengaturan tampilan
 memakai bottom sheet. Sakelar Kurangi animasi berlaku langsung dan tersimpan
 per browser. Pengaturan pengurangan gerak perangkat tetap dihormati.
+
+## Penyempurnaan statistik, Journal, dan New Trade
+
+Statistik Home menempatkan visual pada masing-masing kartu. Win Rate memakai
+komposisi Win/Loss/BE. Profit Factor membandingkan nilai total hasil positif
+dengan nilai absolut hasil negatif. Drawdown memakai ring persentase. Expectancy
+tetap memakai satuan R dengan penanda relatif terhadap nol.
+
+Journal memakai satu baris tab status bersudut 7 px. Filter menggunakan pilihan
+visual langsung di bottom sheet. Pilihan baru berlaku setelah Terapkan.
+
+New Trade mengikuti Identitas → Layer → Review. Status dipilih pada Identitas,
+jumlah dan nilai posisi dikelola pada Layer, dan konfirmasi Actual ada di Review.
+Dua layer tersedia secara default. Hapus layer berisi data meminta konfirmasi.
+
+OCR satu posisi mengisi kandidat yang dapat dikenali dan tidak bentrok pada
+draft layer aktif. Pengguna bisa memilih hasil yang bentrok secara eksplisit.
+Offset harus diisi sebelum waktu OCR dipakai. Mengubah teks atau offset
+membatalkan staging sesi terkait. Gross membutuhkan konfirmasi semua komponen
+biaya. OCR tidak menyimpan trade dan tidak mengonfirmasi Actual.

@@ -74,3 +74,7 @@ memindahkan file atau membuka versi baru di alamat browser yang berbeda.
 Patch mencakup donut hasil CLOSED Actual, progres target bulanan, Journal
 berbasis kartu, panel filter dan sortir, dialog konfirmasi, serta sakelar
 Kurangi animasi. Demo Home juga memakai bentuk navigasi baru.
+
+Revisi New Trade memakai tiga tahap dan dapat mengisi kandidat OCR langsung ke
+draft layer aktif. Journal memakai tab status bersudut dan pilihan filter
+langsung dalam panel. Kartu statistik Home menampilkan visual per metrik.

@@ -79,3 +79,15 @@ OCR gambar MT5 nyata, serta deployment produksi belum dilakukan pada redesign.
   reload. Halaman tetap bebas overflow horizontal pada viewport uji.
 - 108 tes regresi Core RC dan tes DOM demo Home lulus. Patch dapat diterapkan
   ulang ke baseline OCR1 dengan output HTML identik.
+
+## Revisi statistik, filter, New Trade, dan OCR
+
+- 108 tes regresi Core RC lulus. Patch OCR1 dapat diterapkan ulang dan
+  menghasilkan build yang identik.
+- OCR Tesseract native membaca gambar sintetis untuk uji parser. Uji browser
+  memakai keluaran OCR sintetis melalui pengganti worker untuk mengisolasi
+  perpindahan hasil dari upload ke draft dan konfirmasi sebelum save.
+- Verifikasi Net P/L nol, lot pada format satu posisi, offset UTC pecahan,
+  perlindungan nilai manual, dan pemisahan kandidat dari Actual.
+- Browser Chromium diuji pada lebar 320/360/375/390/412/768/1280 CSS px.
+  Screenshot MT5 asli, OCR CDN di Android, dan perangkat fisik masih terbuka.
