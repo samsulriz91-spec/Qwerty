@@ -1,18 +1,18 @@
-# Home — Modern Analytics
+# Home demo · Calm Cockpit
 
-User-approved direction C, 4 November 2026. Scope remains a standalone Home
-prototype for a trader using one Android phone. All data is synthetic.
+Palet kandidat 4 November 2026. Demo Home ditujukan untuk trader yang
+menggunakan satu HP Android. Seluruh data demo bersifat sintetis.
 
 ## Design plan
 
 | Role | Token |
 | --- | --- |
-| Midnight background | `#080f1c` |
-| Navy surface | `#101c2e` |
-| Divider | `#25354c` |
-| Primary text | `#edf4ff` |
-| Secondary text | `#9cacc4` |
-| Signal blue | `#6bafff` |
+| Latar grafit | `#141318` |
+| Permukaan | `#1d1b23` |
+| Pembatas | `#373342` |
+| Teks utama | `#f3effa` |
+| Teks sekunder | `#b7afc7` |
+| Aksen lavender | `#c7b9ff` |
 
 Mint marks wins, coral marks losses, and slate marks breakeven. Use system
 sans-serif for the interface and Bahnschrift/DIN Alternate fallbacks for numeric
@@ -30,11 +30,10 @@ records. Search spans the toolbar width; outcome and sort controls share a row.
 
 ## Review before implementation
 
-Keep the navy/blue preference. Reserve visual emphasis for the actual balance
-signal; avoid decorative gradients and miniature charts without data meaning.
-Use varied hierarchy: compact KPI summaries, one main chart, a smaller outcome
-visual, a flat goal/discipline strip, and an aligned table. Do not invent growth
-comparisons or readiness claims.
+Tempatkan saldo sebagai fokus Home, dengan gradien lembut khusus kartu saldo.
+Lavender menandai grafik saldo, pilihan aktif, dan aksi utama. Warna hijau,
+koral, dan abu-abu menunjukkan hasil trade. Gunakan batas tipis untuk bagian
+yang perlu dipindai cepat dan sisakan visual utama untuk grafik saldo.
 
 ## Interaction and motion
 
@@ -94,7 +93,7 @@ all IDs as independent objects. Optional animation failures preserve static data
 | Dialog | Confirm returning filters/view settings to defaults |
 | Snackbar | Action feedback, with Undo for the animation setting |
 | FAB | Raised circular Trade-new action within bottom navigation |
-| Bottom navigation | Existing five Home-level destinations; other pages remain placeholders |
+| Bottom navigation | Home, Journal (tabel), New Trade (petunjuk), Analytics (grafik), More (opsi tampilan) |
 
 Do not fabricate entry/SL/TP/lot in the trade sheet. Reset changes only view state,
 not the synthetic ideas. Dialogs use native modal behavior and preserve keyboard

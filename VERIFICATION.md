@@ -1,8 +1,10 @@
-# Verification — Modern Analytics, 4 November 2026
+# Verifikasi · Calm Cockpit, 4 November 2026
 
 Scope: standalone Home with synthetic data, not a live-journal release.
 
-## Render regression reproduced and fixed
+## Riwayat verifikasi demo sebelum redesign
+
+### Render regression reproduced and fixed
 
 The previous build 810abdc nested `winCount` inside the `winRate` write target.
 Updating `winRate.textContent` removed `winCount`. The next assignment threw
@@ -14,7 +16,7 @@ The updated regression test models descendant-ID removal. Running it against
 passes and fills chart opening/closing balances, donut segments/counts and table.
 An independent lxml HTML parse confirms the affected IDs are now siblings.
 
-## Passed
+### Passed
 
 - Top balance 2,952.70 USC, today's P/L +217.70 USC, and 7 all-time closed ideas.
 - Period chips and native selector synchronization.
@@ -41,10 +43,27 @@ An independent lxml HTML parse confirms the affected IDs are now siblings.
 - Contrast on surface #101c2e: secondary text 7.42:1; mint 10.08:1; coral 7.74:1.
   These selected colors are checked, not a complete accessibility audit.
 
-## Not verified
+### Batas verifikasi versi sebelumnya
 
 Actual browser rendering, screenshots, responsive overflow, animation appearance,
 real download behavior, touch gestures, physical device and keyboard navigation.
 The local browser binary remains unavailable. A cloud-browser check also could not open the local file because its URL security policy disallows file URLs. No visual browser verification is claimed. Do not
 present the DOM stub as browser or visual QA. No external deployment is requested
 or verified. GitHub contains source, not a hosted application.
+
+## Pengujian redesign Calm Cockpit
+
+- Chromium 153, viewport 320/360/375/390/412/768/1280 CSS px. Core RC dan demo
+  Home lulus pemeriksaan lebar halaman. Demo Home merender grafik dan donut,
+  mengganti periode, menuju Journal/Analytics, serta membuka opsi More.
+- Core RC merender lima tujuan navigasi, empat kategori Analytics, filter
+  Journal, grafik dengan inspeksi keyboard, dan Calendar dari More.
+- Core RC menjaga posisi halaman saat sheet dibuka, menerima percobaan scroll
+  latar, dan ditutup lewat Escape. Kandidat OCR teks sintetis dapat dibaca,
+  kolom Entry minimal 48 px dan lebih dari 200 px lebar pada viewport uji.
+- Regresi Core RC: 27 + 33 + 48 = 108 lulus. Tes DOM demo Home juga lulus.
+- Patch diterapkan pada salinan OCR1 yang bersih dan menghasilkan build yang
+  identik dengan working copy redesign.
+
+Bukti ini berasal dari browser dan fixture sintetis. Uji fisik Android,
+OCR gambar MT5 nyata, serta deployment produksi belum dilakukan pada redesign.

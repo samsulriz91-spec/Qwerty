@@ -1,0 +1,407 @@
+diff --git a/checkpoint/redesign/app.js b/checkpoint/redesign/app.js
+index d7e1d52..49fe2b0 100644
+--- a/checkpoint/redesign/app.js
++++ b/checkpoint/redesign/app.js
+@@ -8,31 +8,41 @@ function showError(text){if($('#dialog').open){let body=$('#sheet-body'),el=$('#
+ function ctx(){return C.snapshot(db,accountId,dataset,cutoff())}
+ function cutoff(){if(period==='Semua')return '';let now=new Date(),days={'1D':1,'1W':7,'1B':30,'3B':90,'6B':180,'1T':365}[period];return new Date(now.getTime()-days*86400000).toISOString()}
+ function sheet(title,html){modalReturn=document.activeElement;$('#sheet-title').textContent=title;$('#sheet-body').innerHTML=html;if(!$('#dialog').open)$('#dialog').showModal();if(!motion&&!matchMedia('(prefers-reduced-motion:reduce)').matches)$('#dialog').animate([{transform:'translateY(30px)',opacity:.5},{transform:'translateY(0)',opacity:1}],{duration:230});$('#close').focus()}
+-function closeSheet(){let active=$('#dialog').open;$('#dialog').close();confirmCallback=null;if(active&&modalReturn?.isConnected)modalReturn.focus()}
++function closeSheet(){let active=$('#dialog').open;$('#dialog').close();confirmCallback=null;if(active&&modalReturn?.isConnected)modalReturn.focus({preventScroll:true})}
+ function ask(title,text,fn){sheet(title,'<p>'+esc(text)+'</p><div class="toolbar"><button class="btn secondary" data-a="cancel">Batal</button><button class="btn" data-a="confirm">Lanjutkan</button></div>');confirmCallback=fn}
+ function safeNavigate(fn){if(dirty){ask('Tinggalkan draft?','Perubahan yang belum disimpan akan dilepas. Trade tersimpan tetap ada.',()=>{dirty=false;draft=null;candidate=null;fn()})}else fn()}
+ function go(next,id=null,replace=false){safeNavigate(()=>{if(route==='journal')jScroll=window.scrollY;route=next;detailId=id;if(!replace)history.pushState({route,id},'', '#'+route);render();if(route==='journal')window.scrollTo(0,jScroll);else window.scrollTo(0,0)})}
+-function header(){let acc=db.accounts.find(a=>a.id===accountId)||db.accounts[0];accountId=acc.id;return'<div class="buildtag">WORKING COPY · data lokal terpisah · bukan produksi</div><header class="top"><button class="account" data-a="accounts"><span class="avatar">'+icon('wallet')+'</span><span><small>JURNAL LOKAL · '+esc(acc.currency)+'</small><b>'+esc(acc.name)+'</b></span>'+icon('chevron')+'</button><button class="round" data-a="settings" aria-label="Pengaturan">'+icon('sliders')+'</button></header><div class="context"><div class="mode"><button data-dataset="Live" class="'+(dataset==='Live'?'selected':'')+'" aria-pressed="'+(dataset==='Live')+'">Live</button><button data-dataset="Experiment" class="'+(dataset==='Experiment'?'selected':'')+'" aria-pressed="'+(dataset==='Experiment')+'">Experiment</button></div><span class="demo">Core RC</span></div>'}
+-function nav(){return ['home','journal','new','analytics','more'].map((n,i)=>'<button data-nav="'+n+'" '+(route===n?'aria-current="page"':'')+'><span class="nav-icon '+(n==='new'?'add':'')+'">'+icon(['home','journal','plus','chart','more'][i])+'</span>'+['Home','Journal','New Trade','Analytics','More'][i]+'</button>').join('')}
++function header(){
++  const acc=db.accounts.find(a=>a.id===accountId)||db.accounts[0];
++  accountId=acc.id;
++  return '<header class="top"><div class="brand"><span class="brand-mark">'+icon('chart')+'</span><div><span class="brand-name">Jurnal Pro Trader</span><span class="buildtag">Core RC · penyimpanan lokal</span></div></div><button class="round" data-a="settings" aria-label="Pengaturan tampilan" aria-haspopup="dialog">'+icon('sliders')+'</button></header>'
++    +'<div class="context"><button class="account" data-a="accounts" aria-haspopup="dialog"><span class="avatar">'+icon('wallet')+'</span><span><small>AKUN · '+esc(acc.currency)+'</small><b>'+esc(acc.name)+'</b></span>'+icon('chevron')+'</button>'
++    +'<div class="mode" role="group" aria-label="Dataset">'+['Live','Experiment'].map(name=>'<button data-dataset="'+name+'" class="'+(dataset===name?'selected':'')+'" aria-pressed="'+(dataset===name)+'">'+name+'</button>').join('')+'</div></div>';
++}
++function nav(){
++  const active=route==='detail'?'journal':route;
++  const items=[['home','Home','home'],['journal','Journal','journal'],['new','New Trade','plus'],['analytics','Analytics','chart'],['more','More','more']];
++  return items.map(([id,label,glyph])=>'<button data-nav="'+id+'" '+(active===id?'aria-current="page"':'')+'><span class="nav-icon'+(id==='new'?' add':'')+'">'+icon(glyph)+'</span><span>'+label+'</span></button>').join('');
++}
+ function rows(trades){return trades.map(t=>{let r=C.ready(t),p=t.layers.reduce((s,l)=>s+(l.exits||[]).reduce((a,e)=>a+e.netPL,0),0),src=t.status==='PLAN'?'NONE':t.status==='OPEN'?'INCOMPLETE':JPTScoreEngine.classifyTradeSource(t).source;return '<button class="trade-card" data-detail="'+esc(t.id)+'"><div class="trade-top"><strong>'+esc(t.symbol)+' <span class="small">'+esc(t.side)+'</span></strong><span class="'+(r.eligible?r.netPL<0?'negative':'positive':'muted')+'">'+(r.eligible?signed(r.netPL)+' '+esc(t.currency):t.status==='OPEN'?signed(C.money(p))+' '+esc(t.currency):'—')+'</span></div><div class="tags"><span class="tag '+t.status.toLowerCase()+'">'+t.status+'</span><span class="tag">'+src+'</span><span class="tag">'+t.layers.length+' layer</span><span class="tag">'+(t.reviewStatus==='COMPLETE'?'Sudah direview':'Belum direview')+'</span></div><small class="small">'+esc(stamp(t.date))+(t.status==='OPEN'?' · realized sementara, di luar KPI':'')+'</small></button>'}).join('')}
+-function chartMarkup(){return '<div class="chartwrap"><div id="chart-tip" class="tooltip"></div><svg class="chart" id="chart" tabindex="0" role="img" aria-label="Closed Balance Trend, gunakan panah kiri kanan untuk melihat nilai" viewBox="0 0 360 188"><defs><linearGradient id="wash" x1="0" y1="0" x2="0" y2="1"><stop id="wash-color" stop-color="#70d8ae" stop-opacity=".19"/><stop offset="1" stop-color="#70d8ae" stop-opacity="0"/></linearGradient><clipPath id="reveal"><rect id="revealrect" width="360" height="188"/></clipPath></defs><path class="grid" d="M0 30H360M0 95H360M0 160H360"/><g clip-path="url(#reveal)"><path id="area" fill="url(#wash)"/><path id="line" stroke="#70d8ae" stroke-width="2.2" fill="none"/><circle id="endpoint" r="4" fill="#b2f1d7"/></g></svg></div>'}
+-function home(){let m=ctx();return '<section class="hero"><div class="eyebrow">Journal Balance '+icon('info')+'</div><div class="balance"><strong id="balance">'+fmt(m.balance)+'</strong><span>'+m.acc.currency+'</span></div><div class="gain '+(m.pnl<0?'loss':'')+'">'+icon('up')+'<span id="pnl">'+signed(m.pnl)+' '+m.acc.currency+'</span><span class="badge" id="return">'+(m.start>0?signed(m.pnl/m.start*100)+'%':'—')+'</span></div><div class="periodlabel" id="motion-caption">'+period+' · Net P/L CLOSED Actual</div>'+(m.n?chartMarkup():'<div class="chart-empty">Belum ada CLOSED Actual pada periode ini.<br>Grafik mengikuti transaksi yang memenuhi syarat.</div>')+'<div class="periods"><span class="slider" style="transform:translateX('+(['1D','1W','1B','3B','6B','1T','Semua'].indexOf(period)*100)+'%)"></span>'+['1D','1W','1B','3B','6B','1T','Semua'].map(p=>'<button data-period="'+p+'" aria-pressed="'+(p===period)+'">'+p+'</button>').join('')+'</div><div class="chart-hint">'+(m.n?'Sentuh grafik untuk melihat saldo':'Mulai dari satu Trade Idea')+'</div></section><main class="content"><div class="heading"><h2>Statistik</h2><button class="textbtn" data-nav="analytics">Lihat detail ↗</button></div>'+stats(m)+'<div class="ideas"><span>Closed Trade Ideas</span><b>'+m.n+'</b></div><div class="source">Cakupan: '+m.n+' eligible / '+m.all.filter(t=>t.status==='CLOSED').length+' CLOSED seluruh riwayat akun. Actual R valid: '+m.rN+'.</div><div class="heading"><h2>Riwayat terbaru</h2><button class="textbtn" data-nav="journal">Lihat semua →</button></div>'+ (rows(m.all.slice().sort((a,b)=>Date.parse(b.date)-Date.parse(a.date)).slice(0,3))||'<div class="empty">Belum ada trade.<br><button class="textbtn" data-nav="new">Catat Trade Idea pertama →</button></div>')+'<div class="heading"><h2>Today Focus</h2></div><div class="focusbox">'+icon('target')+'<div><b>Tulis rencana sebelum eksekusi.</b><p>Fokus manual. Catat keputusan yang bisa dievaluasi.</p></div></div><div class="heading"><h2>Coach</h2></div><div class="coach"><span class="coach-avatar">'+icon('compass')+'</span><div><h3>Tinjau kualitas keputusan.</h3><p>Belum ada analisis otomatis. Mulai dengan membaca alasan entry dan riwayat eksekusi.</p></div></div><div class="footer-note">Saldo jurnal CLOSED, bukan equity broker. Cashflow dan migrasi data lama belum tersedia pada versi lokal ini.</div></main>'}
++function chartMarkup(){return '<div class="chartwrap"><div id="chart-tip" class="tooltip"></div><svg class="chart" id="chart" tabindex="0" role="img" aria-label="Closed Balance Trend, gunakan panah kiri kanan untuk melihat nilai" viewBox="0 0 360 188"><defs><linearGradient id="wash" x1="0" y1="0" x2="0" y2="1"><stop id="wash-color" stop-color="#70d8ae" stop-opacity=".19"/><stop id="wash-end" offset="1" stop-color="#70d8ae" stop-opacity="0"/></linearGradient><clipPath id="reveal"><rect id="revealrect" width="360" height="188"/></clipPath></defs><path class="grid" d="M0 30H360M0 95H360M0 160H360"/><g clip-path="url(#reveal)"><path id="area" fill="url(#wash)"/><path id="line" stroke="#70d8ae" stroke-width="2.2" fill="none"/><circle id="endpoint" r="4" fill="#b2f1d7"/></g></svg></div>'}
++function home(){let m=ctx();return '<section class="hero"><div class="eyebrow">Journal Balance '+icon('info')+'</div><div class="balance"><strong id="balance">'+fmt(m.balance)+'</strong><span>'+m.acc.currency+'</span></div><div class="gain '+(m.pnl<0?'loss':'')+'">'+icon('up')+'<span id="pnl">'+signed(m.pnl)+' '+m.acc.currency+'</span><span class="badge" id="return">'+(m.start>0?signed(m.pnl/m.start*100)+'%':'—')+'</span></div><div class="periodlabel" id="motion-caption">'+period+' · Net P/L CLOSED Actual</div>'+(m.n?chartMarkup():'<div class="chart-empty">Belum ada CLOSED Actual pada periode ini.<br>Grafik mengikuti transaksi yang memenuhi syarat.</div>')+'<div class="periods" role="group" aria-label="Periode Home"><span class="slider" aria-hidden="true" style="transform:translateX('+(['1D','1W','1B','3B','6B','1T','Semua'].indexOf(period)*100)+'%)"></span>'+['1D','1W','1B','3B','6B','1T','Semua'].map(p=>'<button data-period="'+p+'" aria-pressed="'+(p===period)+'">'+p+'</button>').join('')+'</div><div class="chart-hint">'+(m.n?'Sentuh grafik untuk melihat saldo':'Mulai dari satu Trade Idea')+'</div></section><main class="content"><div class="heading"><h2>Statistik</h2><button class="textbtn" data-nav="analytics">Lihat detail ↗</button></div>'+stats(m)+'<div class="ideas"><span>Closed Trade Ideas</span><b>'+m.n+'</b></div><div class="source">Cakupan: '+m.n+' eligible / '+m.all.filter(t=>t.status==='CLOSED').length+' CLOSED seluruh riwayat akun. Actual R valid: '+m.rN+'.</div><div class="heading"><h2>Riwayat terbaru</h2><button class="textbtn" data-nav="journal">Lihat semua →</button></div>'+ (rows(m.all.slice().sort((a,b)=>Date.parse(b.date)-Date.parse(a.date)).slice(0,3))||'<div class="empty">Belum ada trade.<br><button class="textbtn" data-nav="new">Catat Trade Idea pertama →</button></div>')+'<div class="heading"><h2>Today Focus</h2></div><div class="focusbox">'+icon('target')+'<div><b>Tulis rencana sebelum eksekusi.</b><p>Fokus manual. Catat keputusan yang bisa dievaluasi.</p></div></div><div class="heading"><h2>Coach</h2></div><div class="coach"><span class="coach-avatar">'+icon('compass')+'</span><div><h3>Tinjau kualitas keputusan.</h3><p>Belum ada analisis otomatis. Mulai dengan membaca alasan entry dan riwayat eksekusi.</p></div></div><div class="footer-note">Saldo jurnal CLOSED, bukan equity broker. Cashflow dan migrasi data lama belum tersedia pada versi lokal ini.</div></main>'}
+ function stats(m){return '<div class="stats">'+[['Win Rate',m.wr===null?'—':m.wr.toFixed(1)+'%','N = '+m.n],['Profit Factor',m.pf===null?'—':m.pf.toFixed(2),'Tanpa loss: N/A'],['Expectancy R',m.expectancy===null?'—':m.expectancy.toFixed(2)+'R','R valid N = '+m.rN],['Max Closed Balance DD',m.dd===null?'—':m.dd.toFixed(2)+'%','Bukan equity DD']].map(x=>'<div class="stat"><label>'+x[0]+'</label><strong>'+x[1]+'</strong><span class="sub">'+x[2]+'</span></div>').join('')+'</div>'}
+-function journal(){return '<main class="page"><h1>Journal</h1><p class="small">'+esc(dataset)+' · '+esc(ctx().acc.currency)+' · 1 idea = 1 sampel</p><input class="input" id="search" aria-label="Cari trade" placeholder="Cari instrumen, setup, atau catatan" value="'+esc(jSearch)+'"><div class="chips">'+['ALL','PLAN','OPEN','CLOSED'].map(x=>'<button class="chip '+(x===jFilter?'active':'')+'" data-filter="'+x+'">'+(x==='ALL'?'Semua':x)+'</button>').join('')+'</div><label class="field"><span>Periode CLOSED (waktu close); lainnya tanggal idea</span><select id="journal-period">'+['Semua','1D','1W','1B','3B','6B','1T'].map(p=>'<option '+(p===period?'selected':'')+'>'+p+'</option>').join('')+'</select></label><div id="journal-results"></div></main>'}
++function journal(){return '<main class="page"><h1>Journal</h1><p class="small">'+esc(dataset)+' · '+esc(ctx().acc.currency)+' · 1 idea = 1 sampel</p><input class="input" id="search" aria-label="Cari trade" placeholder="Cari instrumen, setup, atau catatan" value="'+esc(jSearch)+'"><div class="chips" role="group" aria-label="Status Trade Idea">'+['ALL','PLAN','OPEN','CLOSED'].map(x=>'<button class="chip '+(x===jFilter?'active':'')+'" data-filter="'+x+'" aria-pressed="'+(x===jFilter)+'">'+(x==='ALL'?'Semua':x)+'</button>').join('')+'</div><label class="field"><span>Periode CLOSED (waktu close); lainnya tanggal idea</span><select id="journal-period">'+['Semua','1D','1W','1B','3B','6B','1T'].map(p=>'<option '+(p===period?'selected':'')+'>'+p+'</option>').join('')+'</select></label><div id="journal-results"></div></main>'}
+ function journalResults(){let m=ctx(),from=cutoff(),ts=m.all.filter(t=>(jFilter==='ALL'||t.status===jFilter)&&(!from||((t.status==='CLOSED'?JPTScoreEngine.tradeCloseDate(t).value:t.date)||'')>=from)&&[t.symbol,t.setup,t.thesis].join(' ').toLowerCase().includes(jSearch.toLowerCase()));$('#journal-results').innerHTML='<p class="small" role="status">N = '+ts.length+' idea · '+(jFilter==='ALL'?'semua status':jFilter)+' · '+esc(period)+(jSearch?' · pencarian “'+esc(jSearch)+'”':'')+'</p><details><summary>Ringkasan hasil filter</summary><p class="small">CLOSED eligible: '+ts.filter(t=>C.ready(t).eligible).length+' · Net Actual '+signed(C.sum(ts.filter(t=>C.ready(t).eligible).map(t=>C.ready(t).netPL)))+' '+m.acc.currency+'</p></details>'+ (rows(ts.sort((a,b)=>Date.parse(b.date)-Date.parse(a.date)))||'<div class="empty">Tidak ada trade yang cocok dengan filter.</div>')}
+ function detail(){let t=db.trades.find(t=>t.id===detailId);if(!t||t.accountId!==accountId||t.dataset!==dataset)return '<main class="page"><p>Trade tidak tersedia dalam konteks ini.</p><button class="btn" data-nav="journal">Kembali</button></main>';t=C.normalize(t);let r=C.ready(t),rr=JPTScoreEngine.actualR(t,t.currency);return '<main class="page"><button class="textbtn" data-nav="journal">← Journal</button><h1>'+esc(t.symbol)+' · '+esc(t.side)+'</h1><p class="small">'+esc(stamp(t.date))+' · '+esc(t.currency)+' · '+esc(t.dataset)+'</p><div class="tags"><span class="tag">'+t.status+'</span><span class="tag">'+(r.eligible?'ACTUAL':r.reason||'NONE')+'</span></div><div class="card"><h3>Hasil Trade Idea</h3><div class="kv"><span>Final Actual Net P/L</span><b>'+(r.eligible?signed(r.netPL)+' '+t.currency:'N/A')+'</b></div><div class="kv"><span>Actual R</span><b>'+(rr.status==='VALID'?rr.value.toFixed(2)+'R':'N/A')+'</b></div><p class="small">'+(r.eligible?'Masuk KPI CLOSED pada waktu close.':'Belum memenuhi syarat KPI CLOSED Actual. Partial exit tetap di luar headline.')+'</p></div><div class="card"><h3>Rencana</h3><p>'+esc(t.setup||'Setup belum dicatat')+'</p><p class="small">'+esc(t.thesis||'Alasan entry belum dicatat')+'</p></div>'+t.layers.map(l=>{let result=JPTPartialClose.aggregateLayer({...l,tradeId:t.id,currency:t.currency},l.exits||[]);return '<section class="card"><h3>'+l.layerId+' · '+(t.status==='PLAN'?'PLAN':result.status)+'</h3>'+[['Entry',l.entry],['Initial SL',l.sl],['Current SL',l.currentSL??l.sl],['TP',l.tp||'—'],['Lot',l.lot||'—'],['Frozen initial risk',l.initialRiskSnapshot?fmt(l.initialRiskSnapshot.riskAmount)+' '+t.currency:'N/A'],['Remaining volume',t.status==='PLAN'?'—':result.remainingVolume??l.lot]].map(x=>'<div class="kv"><span>'+x[0]+'</span><b>'+esc(x[1])+'</b></div>').join('')+'<p class="small">Risiko awal yang sudah direkam tidak dapat diedit. SL events dicatat terpisah; perubahan SL tidak mengubah frozen initial risk. Koreksi risiko efektif belum tersedia.</p>'+ (l.exits||[]).map(e=>'<div class="kv"><span>Exit '+esc(stamp(e.at))+'<br>Volume '+e.closedVolume+' · '+e.plSource+'</span><b>'+signed(e.netPL)+' '+t.currency+'</b></div>').join('')+(l.slEvents||[]).map(e=>'<p class="small">SL '+esc(e.method)+' · '+e.from+' → '+e.to+' · '+esc(stamp(e.at))+'<br>'+esc(e.reason)+'</p>').join('')+(t.status==='OPEN'&&result.status!=='CLOSED'?'<button class="btn secondary full" data-sl="'+l.layerId+'">Catat perubahan SL</button><button class="btn full" data-exit="'+l.layerId+'">Catat exit '+l.layerId+'</button>':'')+'</section>'}).join('')+(t.status==='PLAN'?'<button class="btn full" data-edit-plan="'+esc(t.id)+'">Edit / catat eksekusi PLAN</button>':'')+detailExtensions(t)+'</main>'}
+ function blankLayer(){return{entry:'',sl:'',tp:'',lot:'',risk:'',executedAt:localTime(),exitAt:localTime(),netPL:''}}
+ function newDraft(t){let a=ctx().acc;draft=t?{...C.clone(t),date:t.date.slice(0,10),layers:t.layers.map(l=>({...l,risk:l.plannedRisk??'',executedAt:localTime(),exitAt:localTime(),netPL:''})),source:'ACTUAL',confirmActual:false}:{accountId:a.id,currency:a.currency,dataset,status:'PLAN',symbol:'XAUUSD',side:'Buy',date:today(),setup:'',thesis:'',layers:[blankLayer(),blankLayer()],source:'ACTUAL',confirmActual:false};candidate=null;step=0;layerIndex=0;dirty=false}
+ function field(label,name,value,type='text',extra=''){if(type==='number'){type='text';extra='inputmode="decimal" maxlength="32"'}return '<label class="field"><span>'+label+'</span><input type="'+type+'" data-field="'+name+'" value="'+esc(value)+'" '+extra+'></label>'}
+-function form(){if(!draft)newDraft();let x=draft.layers[layerIndex];return '<main class="page"><h1>'+(draft.id?'Edit PLAN':'New Trade Idea')+'</h1><p class="small">'+esc(ctx().acc.name)+' · '+draft.currency+' · '+draft.dataset+' · waktu WIB</p><button class="textbtn" data-x="ocr">Baca screenshot / teks MT5 ↗</button><div class="steps">'+['Identity','Layers','Review'].map((s,i)=>'<span class="'+(step===i?'active':'')+'">'+(i+1)+'. '+s+'</span>').join('')+'</div><div class="error" id="form-error" hidden role="alert"></div>'+ (step===0?'<label class="field"><span>Status pencatatan</span><select data-field="status">'+['PLAN','OPEN','CLOSED'].map(v=>'<option '+(draft.status===v?'selected':'')+'>'+v+'</option>').join('')+'</select></label><div class="fields">'+field('Instrumen','symbol',draft.symbol,'text','maxlength="30"')+'<label class="field"><span>Arah</span><select data-field="side"><option '+(draft.side==='Buy'?'selected':'')+'>Buy</option><option '+(draft.side==='Sell'?'selected':'')+'>Sell</option></select></label></div>'+(draft.parentTradeId?field('Waktu idea re-entry (WIB)','reentryAt',draft.reentryAt,'datetime-local')+'<p class="small">Parent: '+esc(draft.parentTradeId)+'</p>':field('Tanggal idea','date',draft.date,'date'))+contextFields()+field('Setup (opsional)','setup',draft.setup,'text','maxlength="200"')+'<label class="field"><span>Alasan entry / thesis</span><textarea data-field="thesis" maxlength="4000">'+esc(draft.thesis)+'</textarea></label><div class="note">PLAN fleksibel. OPEN mencatat eksekusi dan membekukan risiko awal. CLOSED adalah pencatatan historis; risiko awal yang tidak terbukti tetap N/A.</div>':step===1?'<label class="field"><span>Jumlah layer</span><select id="layer-count">'+[1,2,3].map(n=>'<option '+(draft.layers.length===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label><div class="layer-nav">'+draft.layers.map((l,i)=>'<button class="chip '+(i===layerIndex?'active':'')+'" data-layer="'+i+'">L'+(i+1)+'</button>').join('')+'</div><div class="fields">'+field('Entry','l.entry',x.entry,'number','min="0" step="any"')+field('Initial SL','l.sl',x.sl,'number','min="0" step="any"')+field('TP (opsional)','l.tp',x.tp,'number','min="0" step="any"')+field('Lot','l.lot',x.lot,'number','min="0" step="any"')+'</div>'+field('Planned / initial risk ('+draft.currency+')','l.risk',x.risk,'number','min="0" step="0.01"')+(draft.status!=='PLAN'?field('Waktu executed fill (WIB)','l.executedAt',x.executedAt,'datetime-local'):'')+(draft.status==='CLOSED'?field('Waktu final exit (WIB)','l.exitAt',x.exitAt,'datetime-local')+field('Final net P/L ('+draft.currency+')','l.netPL',x.netPL,'number','step="0.01"'):'')+'<p class="small">'+(draft.status==='CLOSED'?'Isi Net P/L pada setiap layer yang dipakai. Jika hanya satu posisi, pilih 1 layer. Koma/titik desimal didukung. ':'')+'Risk diisi nominal native yang kamu ketahui. Hasil kalkulator perlu ditinjau sebelum disimpan.</p>':review())+'<div class="toolbar">'+(step>0?'<button class="btn secondary" data-a="prev">Kembali</button>':'')+'<button class="btn" data-a="'+(step===2?'save':'next')+'">'+(step===2?'Simpan Trade Idea':'Lanjut')+'</button></div></main>'}
++function form(){if(!draft)newDraft();let x=draft.layers[layerIndex];return '<main class="page"><h1>'+(draft.id?'Edit PLAN':'New Trade Idea')+'</h1><p class="small">'+esc(ctx().acc.name)+' · '+draft.currency+' · '+draft.dataset+' · waktu WIB</p><button class="textbtn" data-x="ocr">Baca screenshot / teks MT5 ↗</button><div class="steps" role="group" aria-label="Tahap New Trade">'+['Identity','Layers','Review'].map((s,i)=>'<span class="'+(step===i?'active':'')+'" '+(step===i?'aria-current="step"':'')+'>'+(i+1)+'. '+s+'</span>').join('')+'</div><div class="error" id="form-error" hidden role="alert"></div>'+ (step===0?'<label class="field"><span>Status pencatatan</span><select data-field="status">'+['PLAN','OPEN','CLOSED'].map(v=>'<option '+(draft.status===v?'selected':'')+'>'+v+'</option>').join('')+'</select></label><div class="fields">'+field('Instrumen','symbol',draft.symbol,'text','maxlength="30"')+'<label class="field"><span>Arah</span><select data-field="side"><option '+(draft.side==='Buy'?'selected':'')+'>Buy</option><option '+(draft.side==='Sell'?'selected':'')+'>Sell</option></select></label></div>'+(draft.parentTradeId?field('Waktu idea re-entry (WIB)','reentryAt',draft.reentryAt,'datetime-local')+'<p class="small">Parent: '+esc(draft.parentTradeId)+'</p>':field('Tanggal idea','date',draft.date,'date'))+contextFields()+field('Setup (opsional)','setup',draft.setup,'text','maxlength="200"')+'<label class="field"><span>Alasan entry / thesis</span><textarea data-field="thesis" maxlength="4000">'+esc(draft.thesis)+'</textarea></label><div class="note">PLAN fleksibel. OPEN mencatat eksekusi dan membekukan risiko awal. CLOSED adalah pencatatan historis; risiko awal yang tidak terbukti tetap N/A.</div>':step===1?'<label class="field"><span>Jumlah layer</span><select id="layer-count">'+[1,2,3].map(n=>'<option '+(draft.layers.length===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label><div class="layer-nav" role="group" aria-label="Layer trade">'+draft.layers.map((l,i)=>'<button class="chip '+(i===layerIndex?'active':'')+'" data-layer="'+i+'" aria-pressed="'+(i===layerIndex)+'">L'+(i+1)+'</button>').join('')+'</div><div class="fields">'+field('Entry','l.entry',x.entry,'number','min="0" step="any"')+field('Initial SL','l.sl',x.sl,'number','min="0" step="any"')+field('TP (opsional)','l.tp',x.tp,'number','min="0" step="any"')+field('Lot','l.lot',x.lot,'number','min="0" step="any"')+'</div>'+field('Planned / initial risk ('+draft.currency+')','l.risk',x.risk,'number','min="0" step="0.01"')+(draft.status!=='PLAN'?field('Waktu executed fill (WIB)','l.executedAt',x.executedAt,'datetime-local'):'')+(draft.status==='CLOSED'?field('Waktu final exit (WIB)','l.exitAt',x.exitAt,'datetime-local')+field('Final net P/L ('+draft.currency+')','l.netPL',x.netPL,'number','step="0.01"'):'')+'<p class="small">'+(draft.status==='CLOSED'?'Isi Net P/L pada setiap layer yang dipakai. Jika hanya satu posisi, pilih 1 layer. Koma/titik desimal didukung. ':'')+'Risk diisi nominal native yang kamu ketahui. Hasil kalkulator perlu ditinjau sebelum disimpan.</p>':review())+'<div class="toolbar">'+(step>0?'<button class="btn secondary" data-a="prev">Kembali</button>':'')+'<button class="btn" data-a="'+(step===2?'save':'next')+'">'+(step===2?'Simpan Trade Idea':'Lanjut')+'</button></div></main>'}
+ function review(){return '<div class="card"><h3>'+esc(draft.symbol)+' · '+draft.side+' · '+draft.status+'</h3><p class="small">'+draft.layers.length+' layer · '+draft.currency+'</p>'+draft.layers.map((l,i)=>'<div class="kv"><span>L'+(i+1)+' · '+esc(l.lot||'—')+' lot</span><b>Entry '+esc(l.entry||'—')+' / SL '+esc(l.sl||'—')+(draft.status==='CLOSED'?' · P/L '+esc(l.netPL===''?'BELUM DIISI':l.netPL):'')+'</b></div>').join('')+'</div>'+ (draft.status==='CLOSED'?'<label class="field"><span>Sumber P/L</span><select data-field="source"><option '+(draft.source==='ACTUAL'?'selected':'')+'>ACTUAL</option><option '+(draft.source==='CALCULATED'?'selected':'')+'>CALCULATED</option></select></label><label class="check"><input type="checkbox" data-field="confirmActual" '+(draft.confirmActual?'checked':'')+'>Saya mengonfirmasi nilai Actual dari riwayat MT5. Net P/L sudah termasuk biaya; biaya tidak dikurangi ulang.</label>':'')+'<div class="note">'+(draft.status==='OPEN'?'Risiko awal dibekukan ketika record OPEN disimpan.':draft.status==='CLOSED'?'Pencatatan historis tidak otomatis membuktikan initial risk. Actual R tetap N/A tanpa snapshot.':'PLAN tidak dimasukkan ke KPI CLOSED.')+'</div><p class="small">Review ini memeriksa data pencatatan, bukan SOP pra-entry atau review psikologi.</p>'}
+ function analytics(){let m=ctx();return '<main class="page"><h1>Analytics</h1><p class="small">Performance · '+esc(dataset)+' · '+m.acc.currency+' · '+period+'</p>'+stats(m)+'<div class="card"><h3>Evidence</h3><div class="kv"><span>Net P/L Actual CLOSED</span><b>'+signed(m.pnl)+' '+m.acc.currency+'</b></div><div class="kv"><span>CLOSED eligible</span><b>'+m.n+'</b></div><div class="kv"><span>R-valid</span><b>'+m.rN+' / '+m.n+'</b></div><div class="kv"><span>OPEN / PLAN (seluruh riwayat)</span><b>'+m.all.filter(t=>t.status==='OPEN').length+' / '+m.all.filter(t=>t.status==='PLAN').length+'</b></div></div><div class="note">Closed Balance DD tidak mencakup floating P/L. Tidak menyatakan akun prop firm aman.</div><p class="small scope">Process/Risk/Edge analytics detail, Scoreboard serta Coach advanced belum diimplementasikan dalam batch 2. Tidak ada composite score.</p></main>'}
+ function more(){return '<main class="page"><h1>More</h1><button class="row" data-a="accounts">Akun & mata uang '+icon('chevron')+'</button><button class="row" data-a="settings">Tampilan & motion '+icon('chevron')+'</button><button class="row" data-a="reviews">Review Center '+icon('chevron')+'</button><button class="row" data-a="backup">Export backup JSON '+icon('chevron')+'</button><label class="field"><span>Import backup working copy (.json)</span><input id="import" type="file" accept="application/json,.json"></label><button class="row" data-a="sample">Tambahkan contoh sintetis '+icon('chevron')+'</button><div class="note">Penyimpanan lokal terpisah. Tidak ada koneksi Supabase, MT5 atau cloud. Backup ini khusus format working copy, bukan backup jurnal lama.</div><p class="small">Kuota: belum dikonfigurasi/enforced pada batch ini. Fakta transaksi yang sudah terjadi tetap boleh dicatat.</p><p class="small">Audit lokal: '+db.audit.length+' event. Perhitungan memakai native USD/USC terpisah. OCR, lot calculator, impor format lama dan deployment belum disambungkan.</p></main>'}
+ function render(){cancelAnimationFrame(chartFrame);$('#app').innerHTML=header()+(loadError?'<div class="page"><div class="error">'+esc(loadError)+'</div></div>':'')+'<div class="error" id="page-error" hidden role="alert"></div>'+({home,journal,new:form,detail,analytics,more}[route]||home)();$('#nav').innerHTML=nav();if(route==='journal')journalResults();if(route==='home'&&$('#chart'))animateChart()}
+-function animateChart(){let m=ctx(),vals=m.series.map(x=>x.value),lo=Math.min(...vals),hi=Math.max(...vals),pts=vals.map((v,i)=>[4+i*352/(vals.length-1),166-(v-lo)/(hi-lo||1)*137]),d=pts.map((p,i)=>(i?'L':'M')+p.join(',')).join(' ');$('#line').setAttribute('d',d);$('#line').setAttribute('stroke',m.pnl<0?'#f0a29f':'#70d8ae');$('#area').setAttribute('d',d+'L356,188L4,188Z');let label=period+' · Net P/L CLOSED Actual',r=$('#revealrect'),last=pts.at(-1);finishChart=()=>{cancelAnimationFrame(chartFrame);if(!$('#balance'))return;$('#balance').textContent=fmt(m.balance);$('#pnl').textContent=signed(m.pnl)+' '+m.acc.currency;$('#return').textContent=m.start>0?signed(m.pnl/m.start*100)+'%':'—';$('#motion-caption').textContent=label;r.setAttribute('width',360);$('#endpoint').setAttribute('cx',last[0]);$('#endpoint').setAttribute('cy',last[1])};let reduced=motion||matchMedia('(prefers-reduced-motion:reduce)').matches;let start;function tick(t){if(start===undefined)start=t;let f=Math.min(1,(t-start)/900),x=360*(1-(1-f)**3),i=0;while(i<pts.length-2&&pts[i+1][0]<x)i++;let q=Math.min(1,Math.max(0,(x-pts[i][0])/(pts[i+1][0]-pts[i][0]))),v=vals[i]+(vals[i+1]-vals[i])*q;r.setAttribute('width',x);$('#balance').textContent=fmt(v);$('#pnl').textContent=signed(v-m.start)+' '+m.acc.currency;$('#return').textContent=m.start>0?signed((v-m.start)/m.start*100)+'%':'—';$('#endpoint').setAttribute('cx',pts[i][0]+(pts[i+1][0]-pts[i][0])*q);$('#endpoint').setAttribute('cy',pts[i][1]+(pts[i+1][1]-pts[i][1])*q);if(f<1)chartFrame=requestAnimationFrame(tick);else finishChart()}if(reduced)finishChart();else{$('#motion-caption').textContent='Memutar riwayat CLOSED';chartFrame=requestAnimationFrame(tick)}let idx=0;function tip(i){finishChart();let p=m.series[i];$('#chart-tip').textContent=(p.at?stamp(p.at):'Awal periode')+' · '+fmt(p.value)+' '+m.acc.currency;$('#chart-tip').style.opacity=1}$('#chart').onpointerdown=e=>{let b=e.currentTarget.getBoundingClientRect();idx=Math.max(0,Math.min(vals.length-1,Math.round((e.clientX-b.left)/b.width*(vals.length-1))));tip(idx)};$('#chart').onpointermove=e=>{if(e.buttons)e.currentTarget.onpointerdown(e)};$('#chart').onpointerleave=()=>$('#chart-tip').style.opacity=0;$('#chart').onkeydown=e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();idx=Math.max(0,Math.min(vals.length-1,idx+(e.key==='ArrowRight'?1:-1)));tip(idx)}}}
++function animateChart(){let m=ctx(),vals=m.series.map(x=>x.value),lo=Math.min(...vals),hi=Math.max(...vals),pts=vals.map((v,i)=>[4+i*352/(vals.length-1),166-(v-lo)/(hi-lo||1)*137]),d=pts.map((p,i)=>(i?'L':'M')+p.join(',')).join(' ');$('#line').setAttribute('d',d);$('#area').setAttribute('d',d+'L356,188L4,188Z');let label=period+' · Net P/L CLOSED Actual',r=$('#revealrect'),last=pts.at(-1);finishChart=()=>{cancelAnimationFrame(chartFrame);if(!$('#balance'))return;$('#balance').textContent=fmt(m.balance);$('#pnl').textContent=signed(m.pnl)+' '+m.acc.currency;$('#return').textContent=m.start>0?signed(m.pnl/m.start*100)+'%':'—';$('#motion-caption').textContent=label;r.setAttribute('width',360);$('#endpoint').setAttribute('cx',last[0]);$('#endpoint').setAttribute('cy',last[1])};let reduced=motion||matchMedia('(prefers-reduced-motion:reduce)').matches;let start;function tick(t){if(start===undefined)start=t;let f=Math.min(1,(t-start)/900),x=360*(1-(1-f)**3),i=0;while(i<pts.length-2&&pts[i+1][0]<x)i++;let q=Math.min(1,Math.max(0,(x-pts[i][0])/(pts[i+1][0]-pts[i][0]))),v=vals[i]+(vals[i+1]-vals[i])*q;r.setAttribute('width',x);$('#balance').textContent=fmt(v);$('#pnl').textContent=signed(v-m.start)+' '+m.acc.currency;$('#return').textContent=m.start>0?signed((v-m.start)/m.start*100)+'%':'—';$('#endpoint').setAttribute('cx',pts[i][0]+(pts[i+1][0]-pts[i][0])*q);$('#endpoint').setAttribute('cy',pts[i][1]+(pts[i+1][1]-pts[i][1])*q);if(f<1)chartFrame=requestAnimationFrame(tick);else finishChart()}if(reduced)finishChart();else{$('#motion-caption').textContent='Memutar riwayat CLOSED';chartFrame=requestAnimationFrame(tick)}let idx=0;function tip(i){finishChart();let p=m.series[i];$('#chart-tip').textContent=(p.at?stamp(p.at):'Awal periode')+' · '+fmt(p.value)+' '+m.acc.currency;$('#chart-tip').style.opacity=1}$('#chart').onpointerdown=e=>{let b=e.currentTarget.getBoundingClientRect();idx=Math.max(0,Math.min(vals.length-1,Math.round((e.clientX-b.left)/b.width*(vals.length-1))));tip(idx)};$('#chart').onpointermove=e=>{if(e.buttons)e.currentTarget.onpointerdown(e)};$('#chart').onpointerleave=()=>$('#chart-tip').style.opacity=0;$('#chart').onkeydown=e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();idx=Math.max(0,Math.min(vals.length-1,idx+(e.key==='ArrowRight'?1:-1)));tip(idx)}}}
+ function candidateFromDraft(reviewOnly=false){collectFields();let data=C.clone(draft);data.layers=data.layers.map((l,i)=>{let x={...l};for(let k of ['entry','sl','tp','lot','risk']){try{let n=C.parseNumber(l[k],'L'+(i+1)+' '+k,k==='risk'?2:8,true);x[k]=n===null?'':n}catch(e){e.layerIndex=i;throw e}}if(data.status==='CLOSED'){try{x.netPL=C.parseNumber(l.netPL,'L'+(i+1)+' Final Net P/L',2)}catch(e){e.layerIndex=i;throw e}}return x});if(reviewOnly&&data.status==='CLOSED'&&data.source==='ACTUAL'&&!data.confirmActual)data.source='CALCULATED';data.date=data.parentTradeId?iso(data.reentryAt):new Date(data.date+'T12:00:00+07:00').toISOString();data.layers=data.layers.map(l=>({...l,executedAt:data.status==='PLAN'?null:iso(l.executedAt),exitAt:data.status==='CLOSED'?iso(l.exitAt):null}));return C.createTrade(data,db)}
+ function exitSheet(layerId){let t=C.normalize(db.trades.find(t=>t.id===detailId)),l=t.layers.find(l=>l.layerId===layerId);sheet('Catat exit '+layerId,'<p class="small">'+esc(t.symbol)+' · '+t.currency+' · maksimal volume '+l.remainingVolume+'</p><div class="error" id="exit-error" hidden role="alert"></div><label class="field"><span>Volume ditutup</span><input id="exit-volume" type="number" min="0" step="any" value="'+l.remainingVolume+'"></label><label class="field"><span>Actual Net P/L ('+t.currency+')</span><input id="exit-pnl" type="text" inputmode="decimal" placeholder="Termasuk komisi/swap"></label><label class="field"><span>Waktu exit (WIB)</span><input id="exit-at" type="datetime-local" value="'+localTime()+'"></label><label class="check"><input id="exit-confirm" type="checkbox">Saya mengonfirmasi Actual berdasarkan riwayat MT5. Biaya sudah masuk Net P/L.</label><button class="btn full" data-save-exit="'+layerId+'">Simpan exit</button>')}
+-function settings(){sheet('Tampilan','<label class="check"><input id="motion" type="checkbox" '+(motion?'checked':'')+'>Kurangi animasi</label><button class="btn full" data-a="replay">Putar ulang grafik Home</button><p class="small">Desain Home disetujui. Font Inter tertanam. Preferensi reduced motion perangkat tetap dihormati.</p>')}
++function settings(){sheet('Tampilan','<label class="check"><input id="motion" type="checkbox" '+(motion?'checked':'')+'>Kurangi animasi</label><button class="btn full" data-a="replay">Putar ulang grafik Home</button><p class="small">Animasi mengikuti pengaturan ini dan preferensi pengurangan gerak perangkat.</p>')}
+ function accounts(){sheet('Akun lokal',db.accounts.map(a=>'<button class="row" data-account="'+esc(a.id)+'"><span>'+esc(a.name)+'<small>'+esc(a.currency)+' · saldo awal '+fmt(a.initial)+'</small></span>'+(a.id===accountId?'✓':'')+'</button>').join('')+'<p class="small">Akun uji terpisah. Perubahan saldo awal hanya sebelum ada trade di akun.</p><label class="field"><span>Saldo awal akun terpilih ('+ctx().acc.currency+')</span><input id="initial" type="number" min="0" step="0.01" value="'+ctx().acc.initial+'"></label><button class="btn full" data-a="initial">Simpan saldo awal</button>')}
+ function sample(){ask('Tambahkan contoh sintetis?','Menambah tujuh trade contoh pada akun dan dataset terpilih. Tidak mengubah trade yang sudah ada.',()=>{let next=C.clone(db);for(let [i,p]of [55,-32,120,110,-3,86.2,142.5].entries()){let at=new Date(Date.now()-(8-i)*86400000).toISOString(),end=new Date(Date.parse(at)+3600000).toISOString();let t=C.createTrade({accountId,dataset,symbol:'XAUUSD',side:i%2?'Sell':'Buy',date:at,status:'CLOSED',setup:'Contoh sintetis',thesis:'Data untuk memeriksa alur working copy.',source:'ACTUAL',confirmActual:true,layers:[{entry:2700,sl:2690,tp:2720,lot:.01,risk:'',executedAt:at,exitAt:end,netPL:p}]},next);t.synthetic=true;next=C.put(next,t)}commit(next);render();toast('Contoh sintetis ditambahkan')})}
+ function backup(){let blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='jpt-working-copy-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Backup working copy disiapkan')}
+@@ -52,7 +62,7 @@ if(b.dataset.saveExit){try{let next=C.exit(db,detailId,b.dataset.saveExit,{volum
+ if(b.dataset.sl){slSheet(b.dataset.sl);return}if(b.dataset.reentry){startReentry(b.dataset.reentry);return}if(b.dataset.review){reviewSheet(b.dataset.review);return}if(b.dataset.saveSl){let next=C.appendSl(db,detailId,b.dataset.saveSl,{value:$('#sl-value').value,method:$('#sl-method').value,at:iso($('#sl-at').value),reason:$('#sl-reason').value});commit(next);closeSheet();render();toast('SL event tersimpan');return}if(b.dataset.saveReview){saveReview(b.dataset.saveReview);return}let a=b.dataset.a;if(a==='cancel'||a==='close'){closeSheet();return}if(a==='confirm'){let cb=confirmCallback;closeSheet();if(cb)cb();return}if(a==='accounts'){accounts();return}if(a==='settings'){settings();return}if(a==='reviews'){reviewCenter();return}if(a==='backup'){backup();return}if(a==='sample'){sample();return}if(a==='replay'){closeSheet();go('home');return}if(a==='initial'){if(db.trades.some(t=>t.accountId===accountId))throw Error('Saldo awal dikunci setelah ada trade. Koreksi histori belum masuk batch ini.');let v=$('#initial').value;if(v===''||!Number.isFinite(Number(v))||Number(v)<0)throw Error('Saldo awal tidak valid');let next=C.clone(db);next.accounts.find(a=>a.id===accountId).initial=C.money(v);next.revision++;commit(next);closeSheet();render();toast('Saldo awal tersimpan');return}
+ if(a==='next'){if(step===0){if(!draft.symbol.trim()||!draft.date)throw Error('Isi instrumen dan tanggal idea');step=1}else{candidateFromDraft(true);candidate=null;step=2}render();return}if(a==='prev'){step=Math.max(0,step-1);render();return}if(a==='save'){b.disabled=true;try{candidate=candidateFromDraft();commit(C.put(db,JPTFeatures.prepare(db,candidate,draft.executionIntent||'ALREADY_EXECUTED')));dirty=false;draft=null;candidate=null;go('journal');toast('Trade Idea tersimpan')}catch(err){b.disabled=false;throw err}return}
+ }catch(err){if(Number.isInteger(err.layerIndex)&&draft){step=1;layerIndex=err.layerIndex;render()}showError(err.message)}});
+-$('#close').onclick=closeSheet;$('#dialog').addEventListener('close',()=>{if(modalReturn?.isConnected)modalReturn.focus()});$('#dialog').addEventListener('click',e=>{if(e.target===$('#dialog')){let r=e.target.getBoundingClientRect();if(e.clientY<r.top||e.clientX<r.left||e.clientX>r.right)closeSheet()}});
++$('#close').onclick=closeSheet;$('#dialog').addEventListener('close',()=>{if(modalReturn?.isConnected)modalReturn.focus({preventScroll:true})});$('#dialog').addEventListener('click',e=>{if(e.target===$('#dialog')){let r=e.target.getBoundingClientRect();if(e.clientY<r.top||e.clientX<r.left||e.clientX>r.right)closeSheet()}});
+ window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});history.replaceState({route:'home',id:null},'','#home');window.addEventListener('popstate',e=>{let target=e.state||{route:'home'};if(dirty){history.pushState({route,id:detailId},'','#'+route);safeNavigate(()=>go(target.route,target.id));return}route=target.route||'home';detailId=target.id;render();window.scrollTo(0,route==='journal'?jScroll:0)});render();
+ 
+ function collectFields(){if(!draft)return;document.querySelectorAll('[data-field]').forEach(el=>{let n=el.dataset.field,v=el.type==='checkbox'?el.checked:el.value;if(n.startsWith('l.'))draft.layers[layerIndex][n.slice(2)]=v;else draft[n]=v})}
+diff --git a/checkpoint/redesign/build.py b/checkpoint/redesign/build.py
+index a812481..02ce18e 100644
+--- a/checkpoint/redesign/build.py
++++ b/checkpoint/redesign/build.py
+@@ -1,6 +1,6 @@
+ from pathlib import Path
+ r=Path(__file__).parent
+ scripts=[r.parent/'src/score-engine.js',r.parent/'src/partial-close.js',r.parent/'src/risk-snapshot.js',r.parent/'src/review-records.js',r/'core.js',r/'features.js',r/'icons.js',r/'app.js',r/'complete.js']
+-html='<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101417"><title>JPT · Core RC · Working Copy</title><style>'+ (r/'style.css').read_text()+'</style></head><body><div id="app" class="app"></div><nav id="nav" aria-label="Navigasi utama"></nav><dialog id="dialog" aria-labelledby="sheet-title"><div class="sheet"><div class="handle"></div><div class="sheet-head"><h2 id="sheet-title"></h2><button class="round" id="close" aria-label="Tutup panel">×</button></div><div id="sheet-body"></div></div></dialog><div id="toast" class="toast" role="status" hidden></div>'
++html='<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#141318"><title>Jurnal Pro Trader · Core RC</title><style>'+ (r/'style.css').read_text()+'\n'+(r/'cockpit.css').read_text()+'</style></head><body><div id="app" class="app"></div><nav id="nav" aria-label="Navigasi utama"></nav><dialog id="dialog" aria-labelledby="sheet-title"><div class="sheet"><div class="handle"></div><div class="sheet-head"><h2 id="sheet-title"></h2><button class="round" id="close" aria-label="Tutup panel">×</button></div><div id="sheet-body"></div></div></dialog><div id="toast" class="toast" role="status" hidden></div>'
+ for f in scripts:html+='<script>\n'+f.read_text()+'\n</script>'
+ html+='</body></html>';(r/'dist/index.html').write_text(html);print('Built',len(html),'bytes; embedded engines, font and UI')
+diff --git a/checkpoint/redesign/cockpit.css b/checkpoint/redesign/cockpit.css
+new file mode 100644
+index 0000000..5de6665
+--- /dev/null
++++ b/checkpoint/redesign/cockpit.css
+@@ -0,0 +1,277 @@
++/* Calm Cockpit, shared visual language for the Core RC interface. */
++:root {
++  --bg: #141318;
++  --surface: #1d1b23;
++  --raised: #26232f;
++  --field: #18171e;
++  --line: #373342;
++  --control-line: #716a82;
++  --ink: #f3effa;
++  --muted: #b7afc7;
++  --accent: #c7b9ff;
++  --accent-ink: #211737;
++  --accent-wash: #342a49;
++  --green: #84dfbc;
++  --red: #ffacb6;
++  --pad: clamp(16px, 5vw, 24px);
++  --nav-space: calc(96px + env(safe-area-inset-bottom, 0px));
++  --demo-width: 480px;
++}
++
++body {
++  background: #100f14;
++  scroll-padding-bottom: var(--nav-space);
++}
++
++html { scroll-padding-bottom: var(--nav-space); }
++html:has(#dialog[open]) { overflow: hidden; }
++.app { min-height: 100dvh; }
++.icon { vertical-align: middle; }
++button:focus-visible, input:focus-visible, select:focus-visible,
++textarea:focus-visible, summary:focus-visible, [tabindex]:focus-visible {
++  outline: 2px solid var(--accent);
++  outline-offset: 2px;
++}
++
++.top {
++  padding: max(12px, env(safe-area-inset-top, 0px)) var(--pad) 10px;
++  min-height: 68px;
++  gap: 10px;
++}
++.brand, .brand-mark { display: flex; align-items: center; }
++.brand { gap: 10px; min-width: 0; }
++.brand-mark {
++  justify-content: center;
++  width: 36px;
++  height: 36px;
++  flex: 0 0 36px;
++  border-radius: 11px;
++  background: var(--accent-wash);
++  color: var(--accent);
++}
++.brand-mark .icon { width: 20px; height: 20px; }
++.brand-name { display: block; font-size: 15px; font-weight: 650; letter-spacing: -.35px; }
++.buildtag {
++  display: block;
++  padding: 0;
++  background: transparent;
++  color: var(--muted);
++  font-size: 10px;
++  line-height: 1.55;
++}
++.top .round { flex-shrink: 0; background: var(--surface); border: 1px solid var(--line); }
++.context {
++  padding: 5px var(--pad) 0;
++  display: grid;
++  grid-template-columns: minmax(0, 1fr) auto;
++  gap: 8px;
++}
++.account, .mode {
++  min-width: 0;
++  min-height: 48px;
++  border: 1px solid var(--line);
++  border-radius: 12px;
++  background: var(--surface);
++}
++.account { padding: 4px 8px; gap: 7px; }
++.account > span { min-width: 0; }
++.account .avatar { width: 26px; height: 28px; background: transparent; color: var(--accent); }
++.account .icon { width: 16px; height: 16px; }
++.account > .icon { width: 13px; margin-left: auto; color: var(--muted); }
++.account small { margin-bottom: 2px; font-size: 9px; letter-spacing: .55px; }
++.account b {
++  display: block;
++  overflow: hidden;
++  text-overflow: ellipsis;
++  white-space: nowrap;
++  font-size: 12px;
++  font-weight: 600;
++}
++.mode { padding: 2px; }
++.mode button { min-height: 44px; padding: 0 8px; border-radius: 9px; color: var(--muted); }
++.mode .selected { background: var(--accent-wash); color: var(--accent); box-shadow: none; }
++
++.hero {
++  position: relative;
++  margin: 16px var(--pad) 0;
++  padding: clamp(14px, 4vw, 21px);
++  border: 1px solid #4b405e;
++  border-radius: 19px;
++  background: linear-gradient(155deg, #2d2540 0%, #211c2b 54%, #1d1b23 100%);
++}
++.eyebrow { color: #dfd5f2; font-size: 12px; font-weight: 550; }
++.balance { gap: 7px; margin: 4px 0 5px; }
++.balance strong { font-size: clamp(32px, 10vw, 47px); font-weight: 640; letter-spacing: -.065em; }
++.balance span { font-weight: 550; }
++.gain { gap: 6px; }
++.gain.loss { color: var(--red); }
++.badge { background: #223b34; color: var(--green); }
++.gain.loss .badge { background: #412831; color: var(--red); }
++.periodlabel { margin-top: 5px; }
++.chartwrap { margin: 10px 0 4px; }
++.chart { height: 140px; }
++.chart .grid { stroke: #665974; }
++#line { stroke: var(--accent); }
++#endpoint { fill: #e1d8ff; }
++#wash-color, #wash-end { stop-color: var(--accent); }
++.tooltip { left: 0; background: var(--raised); border-color: var(--control-line); }
++.chart-empty {
++  display: grid;
++  place-content: center;
++  min-height: 91px;
++  padding: 12px 8px;
++  margin: 12px 0;
++  border: 1px dashed #655873;
++  border-radius: 10px;
++}
++.periods { margin: 0; background: #17151d; border: 1px solid var(--line); border-radius: 11px; }
++.periods button { min-width: 0; border-radius: 8px; font-weight: 550; }
++.periods button[aria-pressed=true] { color: var(--accent); }
++.slider { background: var(--accent-wash); box-shadow: none; border-radius: 8px; }
++.chart-hint { margin: 9px 0 0; }
++
++.content, .page { min-width: 0; padding-inline: var(--pad); padding-bottom: var(--nav-space); }
++.page { padding-top: 16px; }
++.page h1 { font-size: 29px; font-weight: 650; letter-spacing: -.045em; margin: 8px 0; }
++.heading { gap: 6px; margin: 13px 0 7px; }
++.heading h2 { font-weight: 630; letter-spacing: -.25px; }
++.stats {
++  grid-template-columns: repeat(2, minmax(0, 1fr));
++  gap: 1px;
++  padding: 0;
++  overflow: hidden;
++  background: var(--line);
++  border: 1px solid var(--line);
++  border-radius: 15px;
++}
++.stat, .stat:nth-child(2n) { min-width: 0; padding: 11px 12px; background: var(--surface); }
++.stat:nth-child(-n+2) { border: 0; }
++.stat:nth-child(2n):before { content: none; }
++.stat label { margin-bottom: 4px; }
++.stat strong { font-weight: 620; overflow-wrap: anywhere; }
++.stat .sub { margin-top: 3px; }
++.ideas { padding: 10px 2px 5px; }
++.source { color: var(--muted); }
++.heading + .card { margin-top: 0; }
++.card, .focusbox, .module {
++  min-width: 0;
++  border: 1px solid var(--line);
++  background: var(--surface);
++}
++.card { padding: 13px; }
++.card h3 { font-weight: 600; }
++.focusbox { border-left: 2px solid var(--accent); border-radius: 0 12px 12px 0; }
++.coach-avatar { background: var(--accent-wash); color: var(--accent); border-color: var(--line); }
++.kv, .trade-card, .row, .scope, .asset-link { border-color: var(--line); }
++.trade-card { padding: 13px 0; }
++.trade-top { flex-wrap: wrap; overflow-wrap: anywhere; }
++.tag { background: var(--raised); color: var(--ink); }
++.tag.plan { background: var(--accent-wash); color: var(--accent); }
++.tag.open { background: #3b3123; color: #f3d292; }
++.tag.closed { background: #223b34; color: var(--green); }
++
++.input, .field input, .field select, .field textarea {
++  border-color: var(--control-line);
++  background: var(--field);
++  font-size: 16px;
++}
++.field { color: var(--ink); }
++.field span { color: var(--muted); }
++.field :is(input, select, textarea) { min-width: 0; }
++.fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
++.btn { background: var(--accent); color: var(--accent-ink); font-weight: 650; }
++.btn.secondary { background: var(--raised); border-color: var(--control-line); color: var(--ink); }
++.btn.danger { background: #492a35; color: var(--red); }
++.round:hover, .row:hover { background: var(--raised); }
++.note, .ocr-summary { background: var(--raised); border-color: var(--accent); }
++.ocr-summary { border-color: var(--line); }
++.ocr-field .input::placeholder { color: var(--muted); }
++.check input, .sheet input[type=checkbox] { accent-color: var(--accent); }
++.progress { background: var(--raised); }
++.progress > span { background: var(--accent); }
++
++.chips, .tabs, .layer-nav {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 6px;
++  overflow: visible;
++}
++.chip {
++  min-height: 44px;
++  border-radius: 9px;
++  border-color: var(--line);
++  padding: 6px 10px;
++  color: var(--muted);
++}
++.chip.active { background: var(--accent-wash); border-color: #8873b3; color: var(--accent); }
++.steps { gap: 4px; margin: 16px 0; }
++.steps span { padding: 8px 5px; border-color: var(--line); background: var(--surface); text-align: center; }
++.steps span.active { border-color: var(--accent); background: var(--accent-wash); color: var(--accent); }
++.module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
++.module { min-height: 105px; border-radius: 13px; padding: 12px; }
++.module .icon { display: block; width: 19px; height: 19px; margin-bottom: 7px; color: var(--accent); }
++.module strong { margin-bottom: 4px; font-weight: 630; }
++.module small { color: var(--muted); }
++.module:hover { border-color: #8873b3; background: var(--raised); }
++.menu-group { margin-top: 17px; }
++.menu-group h2 { margin: 0 0 7px; color: var(--muted); font-size: 12px; font-weight: 600; }
++.menu-list { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; }
++.menu-list .row { min-height: 46px; padding: 8px 11px; justify-content: space-between; }
++.menu-list .row:first-child { border-radius: 12px 12px 0 0; }
++.menu-list .row:last-child { border: 0; border-radius: 0 0 12px 12px; }
++.menu-list .row .icon { width: 17px; height: 17px; color: var(--muted); transform: rotate(-90deg); }
++
++#nav {
++  display: grid;
++  grid-template-columns: repeat(5, minmax(0, 1fr));
++  align-items: end;
++  gap: 2px;
++  padding: 6px max(6px, env(safe-area-inset-right, 0px)) calc(7px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px));
++  border-top: 1px solid var(--line);
++  background: #18171e;
++  box-shadow: 0 -6px 25px #0c0a1055;
++}
++#nav button {
++  position: relative;
++  min-width: 0;
++  min-height: 53px;
++  gap: 3px;
++  padding: 2px;
++  color: var(--muted);
++  font-size: 10px;
++  line-height: 1.4;
++}
++#nav button[aria-current] { color: var(--accent); font-weight: 650; }
++#nav .nav-icon { width: 38px; height: 28px; border-radius: 8px; }
++#nav .nav-icon .icon { width: 18px; height: 18px; }
++#nav button[aria-current] .nav-icon:not(.add) { background: var(--accent-wash); }
++#nav .nav-icon.add {
++  width: 41px;
++  height: 41px;
++  margin-top: -13px;
++  background: var(--accent);
++  color: var(--accent-ink);
++  border-radius: 13px;
++  box-shadow: 0 3px 12px #0a071280;
++}
++#nav .nav-icon.add .icon { width: 22px; height: 22px; }
++#nav button[aria-current] .add { outline: 1px solid var(--accent); outline-offset: 2px; }
++
++#dialog {
++  max-height: 82vh;
++  max-height: 82dvh;
++  overscroll-behavior: contain;
++  border-color: var(--line);
++  background: var(--surface);
++}
++#dialog::backdrop { background: #0c0a12ab; }
++.sheet { padding-inline: var(--pad); padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px)); }
++.sheet p { color: var(--muted); }
++.handle { background: var(--control-line); }
++.toast { bottom: var(--nav-space); background: var(--raised); color: var(--ink); }
++
++@media (max-width: 350px) {
++  .mode button { padding-inline: 6px; }
++  .stat, .stat:nth-child(2n) { padding-inline: 9px; }
++  .chart { height: 125px; }
++}
+diff --git a/checkpoint/redesign/complete.js b/checkpoint/redesign/complete.js
+index e5681ab..7d52352 100644
+--- a/checkpoint/redesign/complete.js
++++ b/checkpoint/redesign/complete.js
+@@ -6,14 +6,23 @@ function pickDraft(label,name,choices){return '<label class="field"><span>'+labe
+ const homeOriginal=home;home=function(){let m=ctx(),ym=F.month(new Date()),t=F.monthly(db,accountId,dataset,ym),r=F.risk(db,accountId,dataset),q=db.accounts.find(a=>a.id===accountId).policies?.at(-1),box='<div class="heading"><h2>Target bulan ini</h2><button class="textbtn" data-x="target">Atur →</button></div><div class="card"><span class="small">'+ym+' · CLOSED Actual</span>'+keyVal('Net P/L',signed(t.pl)+' '+m.acc.currency)+keyVal('Target',t.amount===null?'Belum disetel':fmt(t.amount)+' '+m.acc.currency)+(t.progress===null?'':'<div class="progress"><span style="width:'+Math.max(0,Math.min(100,t.progress))+'%"></span></div><p class="small">'+t.progress.toFixed(1)+'% dari target · N='+t.n+'</p>')+'</div>';
+ if(dataset==='Live')box+='<div class="heading"><h2>Risk Summary</h2><button class="textbtn" data-an="risk">Lihat →</button></div><div class="card">'+keyVal('OPEN Ideas',r.openIdeas)+keyVal('Est. loss ke current SL',r.knownLayers?fmt(r.estimatedLoss)+' '+m.acc.currency:'N/A')+'<p class="small">Cakupan '+r.knownLayers+' layer diketahui / '+r.unknownLayers+' belum tersedia. Bukan equity atau status prop firm SAFE.</p><p class="small">Kuota: '+(q?esc(q.mode)+' · limit '+q.limit+' / hari WIB':'belum dikonfigurasi')+'</p></div>';
+ return homeOriginal().replace('<div class="heading"><h2>Riwayat terbaru',box+'<div class="heading"><h2>Riwayat terbaru').replace('Belum ada analisis otomatis. Mulai dengan membaca alasan entry dan riwayat eksekusi.','Observasi berbasis data jurnal, dengan bukti dan batasan. <button class="textbtn" data-x="coach">Buka Coach →</button>')};
+-function analytics(){let m=ctx(),ctxText=esc(dataset)+' · '+m.acc.currency+' · '+period;let top='<main class="page"><h1>Analytics</h1><p class="small">'+ctxText+'</p>'+pick('Periode','analytics-period',['Semua','1D','1W','1B','3B','6B','1T'],period);if(analyticsSection==='landing')return top+'<div class="module-grid">'+[['performance','Performance','Hasil CLOSED Actual, layer dan bulan'],['process','Process','Review, disiplin dan coverage'],['risk','Risk','Closed DD dan estimated OPEN exposure'],['edge','Edge','Setup/session eksploratif, dengan N']].map(([id,title,desc])=>'<button class="module" data-an="'+id+'"><strong>'+title+'</strong><small>'+desc+'</small></button>').join('')+'</div><button class="row" data-nav="scoreboard">Scoreboard · empat domain '+icon('chevron')+'</button><div class="note">Konteks dan currency tidak dicampur. Periode performance memakai waktu close.</div></main>';
+-let sub='<div class="tabs">'+[['landing','Kategori'],['performance','Performance'],['process','Process'],['risk','Risk'],['edge','Edge']].map(([id,n])=>'<button class="chip '+(analyticsSection===id?'active':'')+'" data-an="'+id+'">'+n+'</button>').join('')+'</div>';let body='';
++function analytics(){let m=ctx(),ctxText=esc(dataset)+' · '+m.acc.currency+' · '+period;let top='<main class="page"><h1>Analytics</h1><p class="small">'+ctxText+'</p>'+pick('Periode','analytics-period',['Semua','1D','1W','1B','3B','6B','1T'],period);if(analyticsSection==='landing')return top+'<div class="module-grid">'+[['performance','Performance','Hasil Actual, layer dan bulan','chart'],['process','Process','Review, disiplin dan cakupan','journal'],['risk','Risk','Drawdown dan estimasi exposure','target'],['edge','Edge','Setup, sesi dan ukuran sampel','compass']].map(([id,title,desc,glyph])=>'<button class="module" data-an="'+id+'">'+icon(glyph)+'<strong>'+title+'</strong><small>'+desc+'</small></button>').join('')+'</div><button class="row" data-nav="scoreboard">Scoreboard · empat domain '+icon('chevron')+'</button><div class="note">Konteks dan currency tidak dicampur. Periode performance memakai waktu close.</div></main>';
++let sub='<div class="tabs" role="group" aria-label="Kategori Analytics">'+[['landing','Kategori'],['performance','Performance'],['process','Process'],['risk','Risk'],['edge','Edge']].map(([id,n])=>'<button class="chip '+(analyticsSection===id?'active':'')+'" data-an="'+id+'" aria-pressed="'+(analyticsSection===id)+'">'+n+'</button>').join('')+'</div>';let body='';
+ if(analyticsSection==='performance'){let layers={};m.closed.forEach(t=>t.layers.forEach(l=>{let x=layers[l.layerId]||(layers[l.layerId]={n:0,w:0,pl:0});x.n++;if(l.finalNetPL>0)x.w++;x.pl=C.sum([x.pl,l.finalNetPL])}));let months={};m.closed.forEach(t=>{let k=F.month(JPTScoreEngine.tradeCloseDate(t).value);months[k]=C.sum([months[k]||0,C.ready(t).netPL])});body=stats(m)+'<div class="card"><h3>Context → hasil</h3>'+keyVal('Net P/L',signed(m.pnl)+' '+m.acc.currency)+keyVal('Eligible CLOSED',m.n)+keyVal('Actual R valid',m.rN+'/'+m.n)+'<p class="small">Expectancy R memakai R-valid ideas. P/L nominal dapat valid walau risk snapshot tidak tersedia.</p></div><div class="card"><h3>Layer Analytics · grain layer</h3>'+Object.entries(layers).map(([k,x])=>keyVal(k,'N='+x.n+' · WR '+(x.w/x.n*100).toFixed(1)+'% · '+signed(x.pl))).join('')+(m.n?'':'<p class="small">Belum ada layer eligible.</p>')+'</div><div class="card"><h3>Monthly P/L</h3>'+Object.entries(months).sort().map(([k,v])=>keyVal(k,signed(v)+' '+m.acc.currency)).join('')+'</div>'}
+ if(analyticsSection==='process'){let selected=m.all.filter(t=>t.status==='CLOSED'&&(!cutoff()||JPTScoreEngine.tradeCloseDate(t).value>=cutoff())),reviewed=selected.filter(t=>(t.reviewHistory||[]).length),setup=selected.filter(t=>(t.setupReviews||[]).length);body='<div class="card"><h3>Process Discipline · observasi</h3>'+keyVal('Review process lengkap',reviewed.length+'/'+selected.length)+keyVal('Setup review lengkap',setup.length+'/'+selected.length)+reviewQuestions.map(([k,q])=>keyVal(q,reviewed.length?reviewed.filter(t=>t.reviewHistory.at(-1).review.answers[k]).length+'/'+reviewed.length+' jawaban Ya':'N/A')).join('')+'</div><div class="note">Ini ringkasan jawaban trader, bukan skor gabungan atau bukti penyebab profit. Review setelah trade tidak membuktikan SOP pra-entry.</div><button class="btn full" data-x="review-center">Buka Review Center</button>'}
+ if(analyticsSection==='risk'){let r=F.risk(db,accountId,dataset);body='<div class="card"><h3>Closed balance risk</h3>'+keyVal('Max Closed Balance DD',m.dd===null?'N/A':m.dd.toFixed(2)+'%')+keyVal('Eligible CLOSED',m.n)+'</div><div class="card"><h3>OPEN exposure · estimasi</h3>'+keyVal('Open ideas',r.openIdeas)+keyVal('Known / unknown layers',r.knownLayers+' / '+r.unknownLayers)+keyVal('Est. loss ke current SL',r.knownLayers?fmt(r.estimatedLoss)+' '+m.acc.currency:'N/A')+keyVal('Confirmed partial realized',signed(r.openRealized)+' '+m.acc.currency)+'<p class="small">'+esc(r.basis)+'</p></div><div class="note">Spec di-snapshot saat eksekusi dicatat. Tanpa spec, exposure N/A. Stop di BE tidak menjamin net BE karena biaya/gap. Tidak menilai kepatuhan broker/prop firm.</div>'}
+ if(analyticsSection==='edge'){let groups=F.group(db,accountId,dataset,'setup',cutoff()),sessions=F.group(db,accountId,dataset,'session',cutoff());body='<p class="small">Setup Analytics · grain Trade Idea</p>'+groups.map(g=>'<div class="card"><h3>'+esc(g.name)+'</h3>'+keyVal('N / WR',g.n+' / '+g.wr.toFixed(1)+'%')+keyVal('Net P/L',signed(g.pnl)+' '+m.acc.currency)+keyVal('Avg R / R-valid',g.avgR===null?'N/A':g.avgR.toFixed(2)+'R / '+g.rN)+'<p class="small">'+(g.smallSample?'Sampel kecil (<5). Hanya observasi, belum membuktikan edge.':'Tetap perlu validasi out-of-sample dan kontrol multiple comparisons.')+'</p><button class="textbtn" data-research-name="'+esc(g.name)+'">Catat hipotesis →</button></div>').join('')+'<div class="card"><h3>Execution / sesi</h3>'+sessions.map(g=>keyVal(g.name,'N='+g.n+' · WR '+g.wr.toFixed(1)+'%')).join('')+'</div><p class="small">Tidak ada ranking otomatis yang membuktikan strategi terbaik. Data session yang kosong diberi label.</p>'}
+ return top+sub+body+'<div class="scope"><button class="textbtn" data-x="research">Research Workspace →</button></div></main>'}
+-function more(){return '<main class="page"><h1>More</h1><p class="small">'+esc(ctx().acc.name)+' · '+dataset+' · '+ctx().acc.currency+'</p>'+[['review-center','Review Center'],['calendar','Calendar'],['tools','Lot Calculator Pro'],['coach','Coach · adviser'],['research','Research Workspace'],['actions','Action Plan'],['experiments','Experiment Lab'],['scoreboard','Scoreboard · coverage'],['account-config','Trading & Accounts'],['specs','Instrument Specifications'],['quota','Kuota harian'],['target','Target bulanan'],['settings','Tampilan & motion'],['data','App & Data / backup']].map(([id,n])=>'<button class="row" data-x="'+id+'">'+n+icon('chevron')+'</button>').join('')+'<div class="note">Semua record working copy disimpan lokal. Cloud/MT5 langsung dan Prop Firm Suite bukan bagian versi lokal ini.</div></main>'}
++function more(){
++  const groups=[
++    ['Trading & Accounts',[['calendar','Calendar'],['tools','Lot Calculator Pro'],['account-config','Akun trading'],['specs','Spesifikasi instrumen'],['quota','Kuota harian'],['target','Target bulanan']]],
++    ['Review & Improvement',[['review-center','Review Center'],['coach','Coach'],['research','Research Workspace'],['actions','Action Plan'],['experiments','Experiment Lab'],['scoreboard','Scoreboard']]],
++    ['App & Data',[['settings','Tampilan & animasi'],['data','Backup & data lokal']]]
++  ];
++  return '<main class="page"><h1>More</h1><p class="small">'+esc(ctx().acc.name)+' · '+dataset+' · '+ctx().acc.currency+'</p>'
++    +groups.map(([title,links])=>'<section class="menu-group"><h2>'+title+'</h2><div class="menu-list">'+links.map(([id,label])=>'<button class="row" data-x="'+id+'"><span>'+label+'</span>'+icon('chevron')+'</button>').join('')+'</div></section>').join('')
++    +'<div class="note">Record Core RC disimpan di browser ini. Gunakan Backup & data lokal untuk mengekspor salinan.</div></main>';
++}
+ function calendarPage(){let days=F.calendar(db,accountId,dataset,calendarMonth),ym=calendarMonth,first=new Date(ym+'-01T12:00:00+07:00'),offset=(first.getUTCDay()+6)%7,total=new Date(Number(ym.slice(0,4)),Number(ym.slice(5,7)),0).getDate(),cells=Array(offset).fill('<span></span>');for(let i=1;i<=total;i++){let d=ym+'-'+String(i).padStart(2,'0'),x=days[d];cells.push('<button class="cal-day '+(x?.pnl>0?'profit':x?.pnl<0?'loss':'')+' '+(F.day(new Date())===d?'cal-today':'')+'" data-day="'+d+'" aria-label="'+d+' '+(x?x.ideas+' idea, '+x.layers+' layer':'tanpa idea')+'"><b>'+i+'</b><span class="dots">'+(x?x.ideas+'I · '+x.layers+'L':'—')+'</span><span class="dots">'+(x?.eligible?signed(x.pnl):'')+'</span></button>')}let detail='';if(calendarSelection){let all=ctx().all,idea=all.filter(t=>F.day(t.date)===calendarSelection),closed=all.filter(t=>C.ready(t).eligible&&F.day(JPTScoreEngine.tradeCloseDate(t).value)===calendarSelection);detail='<div class="card"><h3>'+calendarSelection+'</h3>'+keyVal('Idea date: ideas/layers',idea.length+' / '+idea.reduce((s,t)=>s+t.layers.length,0))+keyVal('Closed-date Actual P/L',signed(C.sum(closed.map(t=>C.ready(t).netPL)))+' '+ctx().acc.currency)+'<p class="small">Daftar berikut berdasarkan tanggal idea. P/L hari ini memakai close time; keduanya dapat berbeda.</p>'+rows(idea)+'</div>'}return '<main class="page">'+navBack('Calendar')+txt('Bulan (WIB)','calendar-month',ym,'month')+'<div class="cal-grid">'+['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(d=>'<span class="cal-head">'+d+'</span>').join('')+cells.join('')+'</div><p class="small">I = Trade Idea, L = layer, berdasarkan tanggal idea. Angka P/L berdasarkan tanggal CLOSED eligible, semua dalam WIB.</p>'+detail+'</main>'}
+ function scoreboard(){let m=ctx(),closed=m.all.filter(t=>t.status==='CLOSED');return '<main class="page">'+navBack('Scoreboard')+'<div class="note">Empat domain independen. Rumus skor produksi ditunda; angka di bawah menunjukkan cakupan bukti, bukan nilai skor.</div>'+[['Performance',m.rN+' R-valid / '+m.n+' eligible CLOSED'],['Process Discipline',closed.filter(t=>t.reviewHistory?.length).length+' / '+closed.length+' process reviewed'],['Setup/Plan Quality',closed.filter(t=>t.setupReviews?.length).length+' / '+closed.length+' setup reviewed'],['Data Integrity',m.all.filter(t=>C.ready(t).eligible).length+' / '+closed.length+' CLOSED Actual-ready']].map(([k,v])=>'<div class="card"><h3>'+k+'</h3><p>'+v+'</p><p class="small">Skor: belum diaktifkan.</p></div>').join('')+'</main>'}
+ function dataPage(){return '<main class="page">'+navBack('App & Data')+'<button class="btn full" data-a="backup">Export backup JSON lengkap</button><label class="field"><span>Import backup working copy</span><input id="import" type="file" accept="application/json,.json"></label><button class="row" data-a="sample">Tambah contoh sintetis '+icon('chevron')+'</button><button class="row" data-x="audit">Lihat Change History '+icon('chevron')+'</button><div class="note">Export mencakup trade, evidence lokal, review, setting dan workspace. Restore meminta konfirmasi. Jangan import backup format lama/produksi tanpa jalur migrasi.</div><p class="small">Tidak ada login/cloud pada versi lokal. Data file/origin browser dapat berbeda. Tidak ada janji autosync. '+db.audit.length+' audit events tersimpan.</p><button class="textbtn" data-x="coverage">Lihat cakupan & batas versi →</button></main>'}
+@@ -53,7 +62,15 @@ document.addEventListener('change',async e=>{try{if(e.target.id==='analytics-per
+ // Modal draft guard, independent of the trade draft.
+ let modalDirty=false;const closeBase=closeSheet,commitBase=commit,sheetBase=sheet;commit=function(n){commitBase(n);modalDirty=false;$('#discard-modal')?.remove()};sheet=function(title,html){modalDirty=false;sheetBase(title,html)};closeSheet=function(force=false){if(modalDirty&&!force){if(!$('#discard-modal')){$('#sheet-body').insertAdjacentHTML('afterbegin','<div class="note" id="discard-modal" role="alert">Perubahan panel belum disimpan.<div class="toolbar"><button class="btn secondary" data-x="keep-modal">Lanjut mengisi</button><button class="btn danger" data-x="discard-modal">Buang perubahan</button></div></div>')}return}modalDirty=false;ocrSession++;closeBase()};$('#close').onclick=()=>closeSheet();$('#dialog').addEventListener('cancel',e=>{e.preventDefault();closeSheet()});document.addEventListener('input',e=>{if(e.target.closest('#sheet-body')&&!e.target.closest('#discard-modal')&&e.target.id!=='motion')modalDirty=true});document.addEventListener('change',e=>{if(e.target.closest('#sheet-body')&&!['motion','spec-pick'].includes(e.target.id))modalDirty=true});
+ // Debounced draft persistence uses a distinct working-copy-only key.
+-const DRAFT_KEY='jpt_redesign_draft_v1';let savedDraft=null,draftTimer;try{let raw=localStorage.getItem(DRAFT_KEY);if(raw)savedDraft=JSON.parse(raw)}catch(_){}function storeLocalDraft(){if(route!=='new'||!draft||!dirty)return;try{savedDraft={draft:C.clone(draft),step,layerIndex,at:new Date().toISOString()};localStorage.setItem(DRAFT_KEY,JSON.stringify(savedDraft));if($('#draft-status'))$('#draft-status').textContent='Draft lokal tersimpan · '+stamp(savedDraft.at)}catch(e){if($('#draft-status'))$('#draft-status').textContent='Draft belum tersimpan: '+e.message}}function scheduleDraft(){clearTimeout(draftTimer);if(route==='new'&&dirty)draftTimer=setTimeout(storeLocalDraft,450);}function restoreLocalDraft(){let s=savedDraft,d=s?.draft,a=db.accounts.find(a=>a.id===d?.accountId);if(!a||!d||!['Buy','Sell'].includes(d.side)||!['PLAN','OPEN','CLOSED'].includes(d.status)||!Array.isArray(d.layers)||d.layers.length<1||d.layers.length>3||d.currency!==a.currency||!['Live','Experiment'].includes(d.dataset)||d.id&&db.trades.find(t=>t.id===d.id)?.status!=='PLAN')throw Error('Draft tidak cocok dengan data akun saat ini');accountId=a.id;dataset=d.dataset;draft=C.clone(d);step=Math.min(1,Math.max(0,s.step||0));layerIndex=Math.min(d.layers.length-1,Math.max(0,s.layerIndex||0));dirty=true;route='new';history.pushState({route},'','#new');render();window.scrollTo(0,0)}const renderWithFeatures=render;render=function(){renderWithFeatures();if(route==='new'){$('.steps')?.insertAdjacentHTML('afterend','<p class="small" id="draft-status">Draft belum menjadi record trade.</p>')}else if(savedDraft)$('#app').insertAdjacentHTML('afterbegin','<div class="note">Ada draft trade lokal yang belum disimpan.<button class="textbtn" data-x="restore-draft">Pulihkan draft →</button><button class="textbtn" data-x="drop-draft">Hapus draft</button></div>')};document.addEventListener('input',scheduleDraft);document.addEventListener('change',scheduleDraft);document.addEventListener('click',()=>{queueMicrotask(scheduleDraft)});window.addEventListener('beforeunload',e=>{if(modalDirty){e.preventDefault();e.returnValue=''}if(dirty)storeLocalDraft()});render();
++const DRAFT_KEY='jpt_redesign_draft_v1';let savedDraft=null,draftTimer;try{let raw=localStorage.getItem(DRAFT_KEY);if(raw)savedDraft=JSON.parse(raw)}catch(_){}function storeLocalDraft(){if(route!=='new'||!draft||!dirty)return;try{savedDraft={draft:C.clone(draft),step,layerIndex,at:new Date().toISOString()};localStorage.setItem(DRAFT_KEY,JSON.stringify(savedDraft));if($('#draft-status'))$('#draft-status').textContent='Draft lokal tersimpan · '+stamp(savedDraft.at)}catch(e){if($('#draft-status'))$('#draft-status').textContent='Draft belum tersimpan: '+e.message}}function scheduleDraft(){clearTimeout(draftTimer);if(route==='new'&&dirty)draftTimer=setTimeout(storeLocalDraft,450);}function restoreLocalDraft(){let s=savedDraft,d=s?.draft,a=db.accounts.find(a=>a.id===d?.accountId);if(!a||!d||!['Buy','Sell'].includes(d.side)||!['PLAN','OPEN','CLOSED'].includes(d.status)||!Array.isArray(d.layers)||d.layers.length<1||d.layers.length>3||d.currency!==a.currency||!['Live','Experiment'].includes(d.dataset)||d.id&&db.trades.find(t=>t.id===d.id)?.status!=='PLAN')throw Error('Draft tidak cocok dengan data akun saat ini');accountId=a.id;dataset=d.dataset;draft=C.clone(d);step=Math.min(1,Math.max(0,s.step||0));layerIndex=Math.min(d.layers.length-1,Math.max(0,s.layerIndex||0));dirty=true;route='new';history.pushState({route},'','#new');render();window.scrollTo(0,0)}const renderWithFeatures=render;
++function retainControlFocus(previous){
++  const selector=['#nav [data-nav]','[data-dataset]','[data-period]','[data-filter]','[data-layer]','[data-an]','#analytics-period'].find(s=>previous?.matches(s));
++  if(!selector)return;
++  const key=selector.match(/\[(data-[a-z-]+)\]/)?.[1];
++  const next=[...document.querySelectorAll(selector)].find(el=>!key||el.getAttribute(key)===previous.getAttribute(key));
++  next?.focus({preventScroll:true});
++}
++render=function(){const previous=document.activeElement;renderWithFeatures();retainControlFocus(previous);if(route==='new'){$('.steps')?.insertAdjacentHTML('afterend','<p class="small" id="draft-status">Draft belum menjadi record trade.</p>')}else if(savedDraft)$('#app').insertAdjacentHTML('afterbegin','<div class="note">Ada draft trade lokal yang belum disimpan.<button class="textbtn" data-x="restore-draft">Pulihkan draft →</button><button class="textbtn" data-x="drop-draft">Hapus draft</button></div>')};document.addEventListener('input',scheduleDraft);document.addEventListener('change',scheduleDraft);document.addEventListener('click',()=>{queueMicrotask(scheduleDraft)});window.addEventListener('beforeunload',e=>{if(modalDirty){e.preventDefault();e.returnValue=''}if(dirty)storeLocalDraft()});render();
+ 
+ // Successful trade save/discard clears only the isolated draft, never real records.
+ function clearLocalDraft(){clearTimeout(draftTimer);try{localStorage.removeItem(DRAFT_KEY)}catch(_){}savedDraft=null}
