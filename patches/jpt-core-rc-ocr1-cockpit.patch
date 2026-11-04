@@ -1,8 +1,8 @@
 diff --git a/checkpoint/redesign/app.js b/checkpoint/redesign/app.js
-index d7e1d52..df0f6fe 100644
+index d7e1d52..5079ad9 100644
 --- a/checkpoint/redesign/app.js
 +++ b/checkpoint/redesign/app.js
-@@ -1,43 +1,356 @@
+@@ -1,43 +1,364 @@
  'use strict';
 -const C=JPTRedesign,$=s=>document.querySelector(s),esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),fmt=x=>Number(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),signed=x=>(x<0?'−':x>0?'+':'')+fmt(Math.abs(x)),icon=n=>'<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">'+(icons[n]||icons.info)+'</svg>',stamp=x=>new Date(x).toLocaleString('id-ID',{timeZone:'Asia/Jakarta',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),today=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'}),localTime=()=>{let f=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});return f.format(new Date()).replace(' ','T')},iso=x=>x?new Date(x+':00+07:00').toISOString():null;
 +const C=JPTRedesign,$=s=>document.querySelector(s),esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),fmt=x=>Number(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),signed=x=>(x<0?'−':x>0?'+':'')+fmt(Math.abs(x)),icon=n=>'<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">'+(icons[n]||icons.info)+'</svg>',stamp=x=>new Date(x).toLocaleString('id-ID',{timeZone:'Asia/Jakarta',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),today=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'}),localTime=()=>{let f=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});return f.format(new Date()).replace(' ','T')},iso=x=>x?new Date((x.length===16?x+':00':x)+'+07:00').toISOString():null;
@@ -180,9 +180,17 @@ index d7e1d52..df0f6fe 100644
 +  const empty='<div class="empty journal-empty"><strong>'+(!model.all.length?'Belum ada Trade Idea':'Tidak ada trade yang cocok')+'</strong><p>'+(!model.all.length?'Catat ide pertama untuk mulai membangun riwayat.':'Ubah pencarian atau filter untuk melihat hasil lain.')+'</p>'
 +    +(!model.all.length?'<button class="btn" data-nav="new">Buat Trade Idea</button>':'<button class="textbtn" data-a="journal-filters">Buka filter</button>')+'</div>';
 +  $('#journal-summary').innerHTML='<span><b>'+items.length+'</b> idea · '+esc(period)+'</span><span>Net Actual <b>'+net+'</b></span>';
-+  $('#journal-results').innerHTML=items.length?'<div class="journal-list">'+rows(items.map(({t})=>t))+'</div>':empty;
++  $('#journal-results').innerHTML=items.length?'<div class="journal-register">'+items.map(({t,at},index)=>{
++    const day=at?F.day(at):null,previous=index?items[index-1].at:null;
++    const header=index===0||day!==(previous?F.day(previous):null)?'<h2>'+(day?esc(new Intl.DateTimeFormat('id-ID',{dateStyle:'full',timeZone:'Asia/Jakarta'}).format(new Date(at))):'Tanggal belum tersedia')+'</h2>':'';
++    const partial=t.status==='OPEN'?t.layers.flatMap(l=>l.exits).filter(e=>e.actualConfirmed&&e.plSource==='ACTUAL'):[];
++    const pnl=actual.get(t.id)??(partial.length?C.sum(partial.map(e=>e.netPL)):null),tone=pnl>0?'positive':pnl<0?'negative':'neutral';
++    return header+'<button class="journal-line" data-detail="'+esc(t.id)+'"><span class="journal-line-marker '+t.status.toLowerCase()+'"></span>'
++      +'<span><strong>'+esc(t.symbol)+'</strong><small>'+esc(t.side)+' · '+t.layers.length+' layer · '+esc([at?stamp(at).split(',').at(-1).trim()+' WIB':'',t.setup||t.session].filter(Boolean).join(' · '))+'</small></span>'
++      +'<span class="journal-line-result '+tone+'"><strong>'+(pnl==null?'—':signed(pnl)+' '+esc(t.currency))+'</strong><small>'+esc(t.status)+' · '+esc(sourceLabels[tradeSource(t)]||tradeSource(t))+'</small></span>'+icon('chevron')+'</button>';
++  }).join('')+'</div>':empty;
 +}
-+function detail(){let t=db.trades.find(t=>t.id===detailId);if(!t||t.accountId!==accountId||t.dataset!==dataset)return '<main class="page"><p>Trade tidak tersedia dalam konteks ini.</p><button class="btn" data-nav="journal">Kembali</button></main>';t=C.normalize(t);let r=C.ready(t),rr=JPTScoreEngine.actualR(t,t.currency);return '<main class="page"><button class="textbtn" data-nav="journal">← Journal</button><h1>'+esc(t.symbol)+' · '+esc(t.side)+'</h1><p class="small">'+esc(stamp(t.date))+' · '+esc(t.currency)+' · '+esc(t.dataset)+'</p><div class="tags"><span class="tag">'+t.status+'</span><span class="tag">'+(r.eligible?'ACTUAL':r.reason||'NONE')+'</span></div><div class="card"><h3>Hasil Trade Idea</h3><div class="kv"><span>Final Actual Net P/L</span><b>'+(r.eligible?signed(r.netPL)+' '+t.currency:'N/A')+'</b></div><div class="kv"><span>Actual R</span><b>'+(rr.status==='VALID'?rr.value.toFixed(2)+'R':'N/A')+'</b></div><p class="small">'+(r.eligible?(rr.status==='VALID'?'Masuk statistik P/L dan Expectancy R.':'Masuk statistik P/L. Risiko awal belum valid pada '+r.layers.filter(l=>!JPTScoreEngine.riskSnapshot(l,t.currency).valid).map(l=>esc(l.layerId)).join(', ')+'.'):'Actual R dihitung setelah seluruh layer ditutup dengan P/L Actual.')+'</p></div>'+(t.status==='PLAN'?'':journalRevision(t))+'<div class="card"><h3>Rencana</h3><p>'+esc(t.setup||'Setup belum dicatat')+'</p><p class="small">'+esc(t.thesis||'Alasan entry belum dicatat')+'</p>'+Object.entries(planFields).filter(([key])=>t.plan?.[key]!=null).map(([key,label])=>keyVal(label,t.plan[key])).join('')+'</div>'+t.layers.map(l=>{let result=JPTPartialClose.aggregateLayer({...l,tradeId:t.id,currency:t.currency},l.exits||[]);let risk=JPTScoreEngine.riskSnapshot(l,t.currency),historical=t.status==='CLOSED'&&!risk.valid;return '<section class="card"><h3>'+l.layerId+' · '+(t.status==='PLAN'?'PLAN':result.status)+'</h3>'+[['Entry',l.entry],[historical?'SL tercatat':'SL awal',l.sl||'—'],...(historical?[]:[['SL saat ini',l.currentSL??(l.sl||'—')]]),['TP',l.tp||'—'],['Lot',l.lot||'—'],['Risiko awal terkunci',risk.valid?fmt(risk.amount)+' '+t.currency:'—'],['Remaining volume',t.status==='PLAN'?'—':result.remainingVolume??l.lot]].map(x=>'<div class="kv"><span>'+x[0]+'</span><b>'+esc(x[1])+'</b></div>').join('')+executionInfo(t,l)+(risk.valid?'<p class="small">Perubahan SL dicatat terpisah. Nominal risiko awal tetap terkunci.</p>':'')+ (l.exits||[]).map(e=>'<div class="kv"><span>Exit '+esc(stamp(e.at))+'<br>Volume '+e.closedVolume+' · '+e.plSource+'</span><b>'+signed(e.netPL)+' '+t.currency+'</b></div>').join('')+(l.slEvents||[]).map(e=>'<p class="small">SL '+esc(e.method)+' · '+e.from+' → '+e.to+' · '+esc(stamp(e.at))+'<br>'+esc(e.reason)+'</p>').join('')+(t.status==='OPEN'&&result.status!=='CLOSED'?'<button class="btn secondary full" data-sl="'+l.layerId+'">Catat perubahan SL</button><button class="btn full" data-exit="'+l.layerId+'">Catat exit '+l.layerId+'</button>':'')+'</section>'}).join('')+(t.status==='PLAN'?'<button class="btn full" data-edit-plan="'+esc(t.id)+'">Edit rencana</button><button class="btn full" data-fill-plan="'+esc(t.id)+'">Catat fill</button>':'')+detailExtensions(t)+'</main>'}
++function detail(){let t=db.trades.find(t=>t.id===detailId);if(!t||t.accountId!==accountId||t.dataset!==dataset)return '<main class="page"><p>Trade tidak tersedia dalam konteks ini.</p><button class="btn" data-nav="journal">Kembali</button></main>';t=C.normalize(t);let r=C.ready(t),rr=JPTScoreEngine.actualR(t,t.currency);return '<main class="page"><div class="journal-detail-actions"><button class="textbtn" data-nav="journal">← Journal</button><button class="btn danger" data-x="delete-journal-trade">Hapus trade</button></div><h1>'+esc(t.symbol)+' · '+esc(t.side)+'</h1><p class="small">'+esc(stamp(t.date))+' · '+esc(t.currency)+' · '+esc(t.dataset)+'</p><div class="tags"><span class="tag">'+t.status+'</span><span class="tag">'+(r.eligible?'ACTUAL':r.reason||'NONE')+'</span></div><div class="card"><h3>Hasil Trade Idea</h3><div class="kv"><span>Final Actual Net P/L</span><b>'+(r.eligible?signed(r.netPL)+' '+t.currency:'N/A')+'</b></div><div class="kv"><span>Actual R</span><b>'+(rr.status==='VALID'?rr.value.toFixed(2)+'R':'N/A')+'</b></div><p class="small">'+(r.eligible?(rr.status==='VALID'?'Masuk statistik P/L dan Expectancy R.':'Masuk statistik P/L. Risiko awal belum valid pada '+r.layers.filter(l=>!JPTScoreEngine.riskSnapshot(l,t.currency).valid).map(l=>esc(l.layerId)).join(', ')+'.'):'Actual R dihitung setelah seluruh layer ditutup dengan P/L Actual.')+'</p></div>'+(t.status==='PLAN'?'':journalRevision(t))+'<div class="card"><h3>Rencana</h3><p>'+esc(t.setup||'Setup belum dicatat')+'</p><p class="small">'+esc(t.thesis||'Alasan entry belum dicatat')+'</p>'+Object.entries(planFields).filter(([key])=>t.plan?.[key]!=null).map(([key,label])=>keyVal(label,t.plan[key])).join('')+'</div>'+t.layers.map(l=>{let result=JPTPartialClose.aggregateLayer({...l,tradeId:t.id,currency:t.currency},l.exits||[]);let risk=JPTScoreEngine.riskSnapshot(l,t.currency),historical=t.status==='CLOSED'&&!risk.valid;return '<section class="card"><h3>'+l.layerId+' · '+(t.status==='PLAN'?'PLAN':result.status)+'</h3>'+[['Entry',l.entry],[historical?'SL tercatat':'SL awal',l.sl||'—'],...(historical?[]:[['SL saat ini',l.currentSL??(l.sl||'—')]]),['TP',l.tp||'—'],['Lot',l.lot||'—'],['Risiko awal terkunci',risk.valid?fmt(risk.amount)+' '+t.currency:'—'],['Remaining volume',t.status==='PLAN'?'—':result.remainingVolume??l.lot]].map(x=>'<div class="kv"><span>'+x[0]+'</span><b>'+esc(x[1])+'</b></div>').join('')+executionInfo(t,l)+(risk.valid?'<p class="small">Perubahan SL dicatat terpisah. Nominal risiko awal tetap terkunci.</p>':'')+ (l.exits||[]).map(e=>'<div class="kv"><span>Exit '+esc(stamp(e.at))+'<br>Volume '+e.closedVolume+' · '+e.plSource+'</span><b>'+signed(e.netPL)+' '+t.currency+'</b></div>').join('')+(l.slEvents||[]).map(e=>'<p class="small">SL '+esc(e.method)+' · '+e.from+' → '+e.to+' · '+esc(stamp(e.at))+'<br>'+esc(e.reason)+'</p>').join('')+(t.status==='OPEN'&&result.status!=='CLOSED'?'<button class="btn secondary full" data-sl="'+l.layerId+'">Catat perubahan SL</button><button class="btn full" data-exit="'+l.layerId+'">Catat exit '+l.layerId+'</button>':'')+'</section>'}).join('')+(t.status==='PLAN'?'<button class="btn full" data-edit-plan="'+esc(t.id)+'">Edit rencana</button><button class="btn full" data-fill-plan="'+esc(t.id)+'">Catat fill</button>':'')+detailExtensions(t)+'</main>'}
 +function blankLayer(){const now=localTime();return{entry:'',sl:'',tp:'',lot:'',risk:'',executedAt:now,exitAt:now,netPL:'',ocrClockDefaults:{executedAt:now,exitAt:now}}}
 +function newDraft(t){let a=ctx().acc;draft=t?{...C.clone(t),date:t.date.slice(0,10),layers:t.layers.map(l=>({...l,risk:l.plannedRisk??'',executedAt:localTime(),exitAt:localTime(),netPL:''})),source:'ACTUAL',confirmActual:false}:{accountId:a.id,currency:a.currency,dataset,status:'PLAN',symbol:'XAUUSD',side:'Buy',date:today(),setup:'',thesis:'',layers:[blankLayer()],source:'ACTUAL',confirmActual:false};candidate=null;step=0;layerIndex=0;dirty=false}
 +function field(label,name,value,type='text',extra=''){if(type==='number'){type='text';extra='inputmode="decimal" maxlength="32"'}if(type==='datetime-local')extra+=' step="1"';return '<label class="field"><span>'+label+'</span><input type="'+type+'" data-field="'+name+'" value="'+esc(value)+'" '+extra+'></label>'}
@@ -383,7 +391,7 @@ index d7e1d52..df0f6fe 100644
  document.addEventListener('click',e=>{let b=e.target.closest('button');if(!b)return;try{
  if(b.dataset.nav){if(b.dataset.nav==='new'&&route!=='new'){safeNavigate(()=>{newDraft();go('new')})}else go(b.dataset.nav);return}
  if(b.dataset.dataset){safeNavigate(()=>{dataset=b.dataset.dataset;draft=null;render()});return}
-@@ -45,17 +358,25 @@ if(b.dataset.period){period=b.dataset.period;render();return}
+@@ -45,17 +366,25 @@ if(b.dataset.period){period=b.dataset.period;render();return}
  if(b.dataset.filter){jFilter=b.dataset.filter;render();return}
  if(b.dataset.detail){if($('#dialog').open)closeSheet();go('detail',b.dataset.detail);return}
  if(b.dataset.account){safeNavigate(()=>{accountId=b.dataset.account;draft=null;closeSheet();render()});return}
@@ -428,10 +436,10 @@ index a812481..02ce18e 100644
  html+='</body></html>';(r/'dist/index.html').write_text(html);print('Built',len(html),'bytes; embedded engines, font and UI')
 diff --git a/checkpoint/redesign/cockpit.css b/checkpoint/redesign/cockpit.css
 new file mode 100644
-index 0000000..545891d
+index 0000000..a25ab57
 --- /dev/null
 +++ b/checkpoint/redesign/cockpit.css
-@@ -0,0 +1,561 @@
+@@ -0,0 +1,584 @@
 +/* Calm Cockpit, shared visual language for the Core RC interface. */
 +:root {
 +  --bg: #141318;
@@ -993,8 +1001,31 @@ index 0000000..545891d
 +#dialog .revision-amount input { width:100%; min-width:0; background:transparent; border:0; padding:4px 0; font-size:1.65rem; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
 +.revision-amount b { font-size:.78rem; color:var(--muted); }
 +.revision-back { min-height:44px; margin-bottom:4px; }
++
++/* A date-led trade register and a segmented editor for narrow screens. */
++.journal-register h2 { margin:20px 0 3px; font-size:.8rem; font-weight:650; color:var(--muted); }
++.journal-line { display:grid; grid-template-columns:4px minmax(0,1fr) minmax(75px,auto) 14px; gap:9px; align-items:center; text-align:left; width:100%; min-height:64px; padding:9px 3px; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; color:var(--ink); }
++.journal-line:hover { background:var(--field); }
++.journal-line strong,.journal-line small { display:block; overflow-wrap:anywhere; }
++.journal-line small { margin-top:4px; font-size:.69rem; color:var(--muted); }
++.journal-line-result { text-align:right; font-variant-numeric:tabular-nums; }
++.journal-line-marker { height:21px; border-radius:2px; background:var(--line); }
++.journal-line-marker.open { background:var(--accent); }
++.journal-line-marker.closed { background:var(--muted); }
++.journal-line > svg { width:14px; height:14px; }
++.journal-detail-actions { display:flex; justify-content:space-between; align-items:center; gap:8px; }
++.layer-edit-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; padding:4px; border:1px solid var(--line); background:var(--field); border-radius:9px; margin:0 0 15px; }
++.layer-edit-tabs button { min-height:44px; border:0; border-radius:6px; background:transparent; color:var(--muted); font-weight:600; }
++.layer-edit-tabs button[aria-pressed=true] { background:var(--accent-wash); color:var(--ink); }
++.layer-section { min-width:0; padding:0; margin:0 0 16px; border:0; }
++.layer-section > legend { font-weight:650; font-size:.86rem; margin-bottom:6px; }
++.layer-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:8px; }
++.layer-editor .field { margin:0 0 7px; gap:3px; }
++#dialog .layer-editor .field :is(input,select,textarea) { width:100%; min-width:0; padding:7px 8px; min-height:44px; border-radius:4px; font-variant-numeric:tabular-nums; }
++#dialog .layer-editor .field textarea { min-height:58px; }
++.layer-result + .layer-result { border-top:1px solid var(--line); margin-top:10px; }
 diff --git a/checkpoint/redesign/complete.js b/checkpoint/redesign/complete.js
-index e5681ab..81135c1 100644
+index e5681ab..7c9a405 100644
 --- a/checkpoint/redesign/complete.js
 +++ b/checkpoint/redesign/complete.js
 @@ -1,19 +1,35 @@
@@ -1040,7 +1071,7 @@ index e5681ab..81135c1 100644
  function calendarPage(){let days=F.calendar(db,accountId,dataset,calendarMonth),ym=calendarMonth,first=new Date(ym+'-01T12:00:00+07:00'),offset=(first.getUTCDay()+6)%7,total=new Date(Number(ym.slice(0,4)),Number(ym.slice(5,7)),0).getDate(),cells=Array(offset).fill('<span></span>');for(let i=1;i<=total;i++){let d=ym+'-'+String(i).padStart(2,'0'),x=days[d];cells.push('<button class="cal-day '+(x?.pnl>0?'profit':x?.pnl<0?'loss':'')+' '+(F.day(new Date())===d?'cal-today':'')+'" data-day="'+d+'" aria-label="'+d+' '+(x?x.ideas+' idea, '+x.layers+' layer':'tanpa idea')+'"><b>'+i+'</b><span class="dots">'+(x?x.ideas+'I · '+x.layers+'L':'—')+'</span><span class="dots">'+(x?.eligible?signed(x.pnl):'')+'</span></button>')}let detail='';if(calendarSelection){let all=ctx().all,idea=all.filter(t=>F.day(t.date)===calendarSelection),closed=all.filter(t=>C.ready(t).eligible&&F.day(JPTScoreEngine.tradeCloseDate(t).value)===calendarSelection);detail='<div class="card"><h3>'+calendarSelection+'</h3>'+keyVal('Idea date: ideas/layers',idea.length+' / '+idea.reduce((s,t)=>s+t.layers.length,0))+keyVal('Closed-date Actual P/L',signed(C.sum(closed.map(t=>C.ready(t).netPL)))+' '+ctx().acc.currency)+'<p class="small">Daftar berikut berdasarkan tanggal idea. P/L hari ini memakai close time; keduanya dapat berbeda.</p>'+rows(idea)+'</div>'}return '<main class="page">'+navBack('Calendar')+txt('Bulan (WIB)','calendar-month',ym,'month')+'<div class="cal-grid">'+['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(d=>'<span class="cal-head">'+d+'</span>').join('')+cells.join('')+'</div><p class="small">I = Trade Idea, L = layer, berdasarkan tanggal idea. Angka P/L berdasarkan tanggal CLOSED eligible, semua dalam WIB.</p>'+detail+'</main>'}
  function scoreboard(){let m=ctx(),closed=m.all.filter(t=>t.status==='CLOSED');return '<main class="page">'+navBack('Scoreboard')+'<div class="note">Empat domain independen. Rumus skor produksi ditunda; angka di bawah menunjukkan cakupan bukti, bukan nilai skor.</div>'+[['Performance',m.rN+' R-valid / '+m.n+' eligible CLOSED'],['Process Discipline',closed.filter(t=>t.reviewHistory?.length).length+' / '+closed.length+' process reviewed'],['Setup/Plan Quality',closed.filter(t=>t.setupReviews?.length).length+' / '+closed.length+' setup reviewed'],['Data Integrity',m.all.filter(t=>C.ready(t).eligible).length+' / '+closed.length+' CLOSED Actual-ready']].map(([k,v])=>'<div class="card"><h3>'+k+'</h3><p>'+v+'</p><p class="small">Skor: belum diaktifkan.</p></div>').join('')+'</main>'}
  function dataPage(){return '<main class="page">'+navBack('App & Data')+'<button class="btn full" data-a="backup">Export backup JSON lengkap</button><label class="field"><span>Import backup working copy</span><input id="import" type="file" accept="application/json,.json"></label><button class="row" data-a="sample">Tambah contoh sintetis '+icon('chevron')+'</button><button class="row" data-x="audit">Lihat Change History '+icon('chevron')+'</button><div class="note">Export mencakup trade, evidence lokal, review, setting dan workspace. Restore meminta konfirmasi. Jangan import backup format lama/produksi tanpa jalur migrasi.</div><p class="small">Tidak ada login/cloud pada versi lokal. Data file/origin browser dapat berbeda. Tidak ada janji autosync. '+db.audit.length+' audit events tersimpan.</p><button class="textbtn" data-x="coverage">Lihat cakupan & batas versi →</button></main>'}
-@@ -28,36 +44,327 @@ function quotaSheet(){let a=ctx().acc,p=a.policies?.at(-1);sheet('Kuota harian 
+@@ -28,36 +44,384 @@ function quotaSheet(){let a=ctx().acc,p=a.policies?.at(-1);sheet('Kuota harian 
  function targetSheet(){let a=ctx().acc,ym=F.month(new Date()),t=a.targets?.find(x=>x.month===ym);sheet('Target bulanan',txt('Bulan','target-month',ym,'month')+pick('Unit target','target-unit',[['AMOUNT','Nominal ('+a.currency+')'],['PERCENT','Persentase saldo awal bulan']],t?.unit||'AMOUNT')+txt('Target','target-value',t?.value??'','text','inputmode="decimal"')+'<p class="small">Progress memakai CLOSED Actual pada bulan tersebut. Persentase dihitung terhadap journal balance awal bulan, tanpa cashflow eksternal pada versi ini.</p><button class="btn full" data-x="save-target">Simpan target</button>')}
  function workspaceForm(type,id=null,preset={}){workspaceType=type;let old=(db[type]||[]).find(x=>x.id===id),x=old||preset;workspaceEdit=old?.id||null;workspaceForm.source=x.source||'MANUAL';sheet(({research:'Research note',actions:'Action Plan',experiments:'Experiment'}[type]),txt('Judul','work-title',x.title||'')+area('Masalah / observasi','work-problem',x.problem||'')+area('Evidence / referensi Trade Idea','work-evidence',x.evidence||'')+area('Hipotesis','work-hypothesis',x.hypothesis||'')+area('Tindakan','work-action',x.action||'')+txt('Target, periode atau jumlah trade','work-target',x.target||'')+area('Evaluasi / lesson','work-evaluation',x.evaluation||'')+'<p class="small">'+(type==='experiments'?'Catatan eksperimen berada pada konteks akun. Hubungkan idea Experiment melalui New Trade setelah status Active.':'Tindakan hanya tersimpan ketika kamu memilih Simpan.')+'</p><button class="btn full" data-x="save-work">Simpan '+(old?'perubahan':'record')+'</button>')}
  function workspaceStatus(id){let x=(db[workspaceType]||[]).find(x=>x.id===id),choices=workspaceType==='experiments'?({Draft:['Active'],Active:['Completed'],Completed:['Accepted','Rejected','Inconclusive']}[x.status]||[]):({Draft:['Active','Canceled'],Active:['Completed','Canceled']}[x.status]||[]);if(!choices.length){sheet('Status final','<p>Record sudah berada pada status final. Catatan evaluasi masih dapat diedit tanpa mengubah riwayat status.</p>');return}sheet('Ubah status',pick('Status berikutnya','work-status',choices,choices[0])+area('Evaluasi / alasan','work-status-note',x.evaluation||'')+'<button class="btn full" data-status-save="'+esc(id)+'">Simpan status</button>')}
@@ -1051,6 +1082,17 @@ index e5681ab..81135c1 100644
 +      '<p class="small"><strong>'+esc(stamp(event.at))+'</strong><br>'+esc(event.reason)+'</p>'+
 +      (event.exits||[]).map(change=>'<p class="small">'+esc(change.before.layerId)+' · '+signed(change.before.netPL)+' → '+signed(change.after.netPL)+' '+t.currency+'<br>'+esc(stamp(change.before.at))+' → '+esc(stamp(change.after.at))+'</p>').join('')
 +    ).join('')+'</details>':'')+'</section>';
++}
++function deleteJournalTrade(){
++  const trade=db.trades.find(t=>t.id===detailId&&t.accountId===accountId&&t.dataset===dataset);
++  if(!trade)throw Error('Trade tidak ditemukan');
++  const linked=db.trades.filter(t=>t.parentTradeId===trade.id).length;
++  ask('Hapus trade '+trade.symbol+'?',
++    'Trade '+trade.side+' dengan '+trade.layers.length+' layer akan dihapus dari jurnal dan statistik.'
++      +(linked?' '+linked+' re-entry tetap tersimpan sebagai trade terpisah.':''),()=>{
++      commit(C.deleteTrade(db,trade.id));
++      go('journal');toast('Trade dihapus');
++    },'Hapus trade');
 +}
 +function executionInfo(t,l){
 +  const details=l.executionDetails??t.ocrCapture?.byLayer?.[l.layerId]?.fields??{};
@@ -1081,28 +1123,59 @@ index e5681ab..81135c1 100644
 +    return;
 +  }
 +  const layer=t.layers.find(l=>l.layerId===section);
-+  if(layer?.exits.length){
++  if(layer){
++    const risk=layer.initialRiskSnapshot;
++    const details=layer.executionDetails??t.ocrCapture?.byLayer?.[layer.layerId]?.fields??{};
++    const numeric=(label,id,v)=>txt(label,id,v??'','text','inputmode="decimal" placeholder="—"');
++    const section=(title,body)=>'<fieldset class="layer-section"><legend>'+title+'</legend>'+body+'</fieldset>';
 +    sheet('Edit layer '+layer.layerId,back+subtitle
-+      +'<div class="revision-position"><div><span>Entry</span><b>'+esc(layer.entry)+'</b></div><div><span>Volume</span><b>'+esc(layer.lot)+' lot</b></div><div><span>Net P/L tersimpan</span><b>'+signed(C.sum(layer.exits.map(e=>e.netPL)))+' '+t.currency+'</b></div></div>'
-+      +'<div class="revision-editor">'+layer.exits.map((e,j)=>{
++      +'<div class="layer-editor"><div class="layer-edit-tabs" role="group" aria-label="Bagian editor">'
++      +[['position','Posisi'],['execution','Eksekusi'],['risk','Risiko']].map(([id,label])=>'<button type="button" data-layer-pane="'+id+'" aria-pressed="'+(id==='position')+'">'+label+'</button>').join('')
++      +'</div><div data-layer-panel="position">'
++      +section('Posisi','<div class="layer-fields">'
++        +numeric('Entry','rev-layer-entry',layer.entry)+numeric('Lot','rev-layer-lot',layer.lot)
++        +numeric('SL tercatat','rev-layer-sl',layer.sl)+numeric('Take profit','rev-layer-tp',layer.tp)
++        +'</div>'+txt('Waktu entry · WIB','rev-layer-at',toWIBinput(layer.executedAt),'datetime-local','step="1"')
++        +numeric('Risiko rencana · '+t.currency,'rev-layer-plannedRisk',layer.plannedRisk))
++      +'</div><div data-layer-panel="execution" hidden>'
++      +section('Detail MT5','<div class="layer-fields">'
++        +numeric('Harga exit','rev-meta-exitPrice',details.exitPrice)
++        +txt('Tiket','rev-meta-ticket',details.ticket??t.ocrCapture?.byLayer?.[layer.layerId]?.ticket??'')
++        +numeric('Komisi','rev-meta-commission',details.commission)+numeric('Swap','rev-meta-swap',details.swap)
++        +'</div>'+txt('Alasan exit','rev-meta-exitReason',details.exitReason??'')+area('Catatan layer','rev-meta-notes',details.notes??''))
++      +((layer.slEvents||[]).length?section('Riwayat perubahan SL',layer.slEvents.map((event,i)=>{
++        const id='rev-sl-'+i;
++        return '<div class="layer-fields">'+numeric('SL baru',id+'-to',event.to)
++          +pick('Metode',id+'-method',['MANUAL','BE','BE+','TRAILING'],event.method)+'</div>'
++          +txt('Waktu perubahan · WIB',id+'-at',toWIBinput(event.at),'datetime-local','step="1"')
++          +txt('Alasan perubahan',id+'-reason',event.reason);
++      }).join('')):'')
++      +(layer.exits.length?section('Hasil exit',layer.exits.map((e,j)=>{
 +        const id='rev-exit-'+j;
-+        return '<fieldset class="revision-exit"><legend>'+(layer.exits.length>1?'Exit '+(j+1)+' · ':'')+e.closedVolume+' lot · '+esc(e.plSource)+'</legend>'
-+          +'<label class="revision-amount"><span>Net P/L</span><input aria-label="Net P/L exit '+(j+1)+' dalam '+t.currency+'" id="'+id+'-net" type="text" inputmode="decimal" value="'+esc(e.netPL)+'"><b>'+t.currency+'</b></label>'
-+          +txt('Waktu exit · WIB',id+'-at',toWIBinput(e.at),'datetime-local','step="1"')+'</fieldset>';
-+      }).join('')
-+      +area('Alasan revisi','rev-reason')
-+      +(layer.exits.some(e=>e.plSource==='ACTUAL')?'<label class="check"><input type="checkbox" id="rev-confirm">Saya sudah cocokkan hasil Actual layer ini dengan MT5.</label>':'')
-+      +'<button class="btn full" data-revision-save="'+esc(layer.layerId)+'">Simpan layer '+esc(layer.layerId)+'</button></div>');
++        return '<div class="layer-result"><p class="small">Exit '+(j+1)+'</p><div class="layer-fields">'
++          +numeric('Net P/L · '+t.currency,id+'-net',e.netPL)+numeric('Lot ditutup',id+'-lot',e.closedVolume)
++          +'</div>'+txt('Waktu exit · WIB',id+'-at',toWIBinput(e.at),'datetime-local','step="1"')
++          +pick('Sumber P/L',id+'-source',[...new Set(['ACTUAL','CALCULATED',e.plSource])],e.plSource)+'</div>';
++      }).join('')+'<label class="check"><input type="checkbox" id="rev-confirm">Saya cocokkan hasil Actual yang dikoreksi dengan MT5.</label>'):'')
++      +'</div><div data-layer-panel="risk" hidden>'
++      +section('Risiko awal','<div class="layer-fields">'
++        +numeric('SL saat entry','rev-risk-sl',risk?.stopLoss)
++        +numeric('Risiko awal · '+t.currency,'rev-risk-amount',risk?.riskAmount)
++        +'</div><p class="small">Gunakan catatan saat posisi dibuka. Kosongkan jika belum diketahui.</p>'
++        +'<label class="check"><input type="checkbox" id="rev-confirm-risk">Saya verifikasi risiko awal dari catatan entry.</label>')
++      +'</div>'
++      +section('Simpan koreksi',area('Alasan revisi','rev-reason')
++        +'<button class="btn full" data-revision-save="'+esc(layer.layerId)+'">Simpan layer '+esc(layer.layerId)+'</button>')+'</div>');
 +    return;
 +  }
 +  sheet('Pilih layer untuk direvisi',subtitle
 +    +'<div class="revision-board">'+t.layers.map(l=>{
 +      const hasExit=l.exits.length>0;
 +      const amount=hasExit?signed(C.sum(l.exits.map(e=>e.netPL)))+' '+t.currency:'Belum ada exit';
-+      return '<button class="revision-tile" data-revision-section="'+esc(l.layerId)+'" '+(hasExit?'':'disabled')+'>'
++      return '<button class="revision-tile" data-revision-section="'+esc(l.layerId)+'">'
 +        +'<span><strong>'+esc(l.layerId)+'</strong><small>'+esc(l.lot)+' lot</small></span><b>'+amount+'</b>'
 +        +'<small>'+(hasExit?esc(stamp(l.exits.map(e=>e.at).sort().at(-1)))+' WIB':'Catat exit dari detail trade')+'</small>'
-+        +'<span class="revision-tile-action">'+(hasExit?'Edit layer':'Menunggu exit')+'</span></button>';
++        +'<span class="revision-tile-action">'+'Edit layer'+'</span></button>';
 +    }).join('')+'</div><button class="textbtn" data-revision-section="context">Edit konteks dan rencana</button>');
 +}
 +function saveTradeRevision(section){
@@ -1113,11 +1186,21 @@ index e5681ab..81135c1 100644
 +    input.plan=Object.fromEntries(Object.keys(planFields).map(key=>[key,value('rev-plan-'+key)]));
 +  }else{
 +    const layer=t.layers.find(l=>l.layerId===section);
-+    if(!layer?.exits.length)throw Error('Layer belum punya exit untuk direvisi');
++    if(!layer)throw Error('Layer tidak ditemukan');
++    const revisedTime=(id,old)=>value(id)===toWIBinput(old)?old:iso(value(id));
++    input.confirmRisk=$('#rev-confirm-risk').checked;
++    input.layer={layerId:layer.layerId,executedAt:revisedTime('rev-layer-at',layer.executedAt),
++      ...Object.fromEntries(['entry','lot','sl','tp','plannedRisk'].map(key=>[key,value('rev-layer-'+key)])),
++      initialRiskSL:value('rev-risk-sl'),riskAmount:value('rev-risk-amount'),
++      executionDetails:Object.fromEntries(Object.keys(mt5Fields).map(key=>[key,value('rev-meta-'+key)]))};
++    if(layer.slEvents?.length)input.layer.slEvents=layer.slEvents.map((event,i)=>{
++      const id='rev-sl-'+i;
++      return {id:event.id,at:revisedTime(id+'-at',event.at),to:value(id+'-to'),method:value(id+'-method'),reason:value(id+'-reason')};
++    });
 +    input.exits=layer.exits.map((e,j)=>{
-+      const entered=value('rev-exit-'+j+'-at');
-+      return {layerId:layer.layerId,eventId:e.eventId,netPL:value('rev-exit-'+j+'-net'),
-+        at:entered===toWIBinput(e.at)?e.at:iso(entered)};
++      const id='rev-exit-'+j;
++      return {layerId:layer.layerId,eventId:e.eventId,netPL:value(id+'-net'),closedVolume:value(id+'-lot'),
++        plSource:value(id+'-source'),at:revisedTime(id+'-at',e.at)};
 +    });
 +  }
 +  commit(C.reviseTrade(db,t.id,input));
@@ -1309,12 +1392,17 @@ index e5681ab..81135c1 100644
  function showCalc(){let acc=ctx().acc,spec=(acc.specs||[]).find(s=>s.symbol===value('calc-spec')),x={mode:calcMode,balance:value('calc-balance'),percent:value('calc-percent'),entry:value('calc-entry'),sl:value('calc-sl'),lot:value('calc-lot'),side:value('calc-side'),rr:value('calc-rr'),weights:value('calc-weights'),pl:value('calc-pl')};calcOutput=F.calc(spec,x);let output=calcOutput,html='';if(calcMode==='MULTI')html=output.layers.map((l,i)=>keyVal('L'+(i+1),'Lot '+l.lot+' · risk '+fmt(l.risk)+' '+acc.currency)).join('')+keyVal('Total risk',fmt(output.risk)+' / '+fmt(output.budget));else {let labels={lot:'Lot sesuai step',rawLot:'Lot sebelum pembulatan',risk:'Estimasi risk ('+acc.currency+')',budget:'Batas risk ('+acc.currency+')',valid:'Memenuhi lot minimum',remainingBudget:'Sisa batas risk ('+acc.currency+')',balance:'Saldo hasil ('+acc.currency+')',netPL:'Net P/L ('+acc.currency+')',riskBudget:'Batas risk ('+acc.currency+')',sl:'Harga SL',distance:'Jarak harga',tp:'Harga TP',rr:'Target RR',profit:'Estimasi profit ('+acc.currency+')'};html=Object.entries(output).map(([k,v])=>keyVal(labels[k]||k,typeof v==='number'?v.toLocaleString('en-US',{maximumFractionDigits:8}):typeof v==='boolean'?(v?'Ya':'Tidak'):String(v))).join('')};$('#calc-result').innerHTML='<div class="result">'+html+'</div>'+(calcMode==='RISK'&&output.valid?'<button class="btn full" data-x="calc-to-plan">Tinjau sebagai PLAN baru</button>':'');calcOutput.input=x;calcOutput.symbol=spec?.symbol}
  function auditSheet(){sheet('Change History · lokal','<p class="small">'+db.audit.length+' event. Event sebelumnya dipertahankan; ini audit aplikasi lokal, bukan audit broker.</p>'+db.audit.slice(-80).reverse().map(e=>'<p class="small paper-note">'+esc(e.type)+' · '+esc(stamp(e.at))+'<br>'+esc(e.tradeId||e.reviewId||'')+'</p>').join(''))}
  async function handleCompleteClick(e){let b=e.target.closest('button');if(!b)return;try{
++if(b.dataset.layerPane){
++  for(const panel of document.querySelectorAll('[data-layer-panel]'))panel.hidden=panel.dataset.layerPanel!==b.dataset.layerPane;
++  for(const tab of document.querySelectorAll('[data-layer-pane]'))tab.setAttribute('aria-pressed',String(tab===b));
++  return;
++}
 +if(b.dataset.revisionSection){revisionSheet(b.dataset.revisionSection);return}
 +if(b.dataset.revisionSave){saveTradeRevision(b.dataset.revisionSave);return}
 +
  if(b.dataset.an){analyticsSection=b.dataset.an;go('analytics');return}if(b.dataset.day){calendarSelection=b.dataset.day;render();return}if(b.dataset.calcMode){calcMode=b.dataset.calcMode;calcOutput=null;render();return}if(b.dataset.workType){workspaceType=b.dataset.workType;render();return}if(b.dataset.workNew){workspaceForm(b.dataset.workNew);return}if(b.dataset.workEdit){workspaceForm(workspaceType,b.dataset.workEdit);return}if(b.dataset.workStatus){workspaceStatus(b.dataset.workStatus);return}if(b.dataset.statusSave){commit(F.changeStatus(db,workspaceType,b.dataset.statusSave,value('work-status'),value('work-status-note')));closeSheet();render();toast('Status tersimpan');return}if(b.dataset.actionFrom){let x=(db.research||[]).find(x=>x.id===b.dataset.actionFrom);workspaceForm('actions',null,{...x,title:'Action: '+x.title,source:'RESEARCH'});return}if(b.dataset.coachAction){workspaceForm('actions',null,{title:b.dataset.title,problem:b.dataset.title,evidence:b.dataset.evidence,action:b.dataset.suggestion,source:'COACH_SUGGESTION'});return}if(b.dataset.researchName){workspaceForm('research',null,{title:'Hipotesis setup '+b.dataset.researchName,evidence:'Setup Analytics · '+b.dataset.researchName,source:'ANALYTICS'});return}if(b.dataset.cfgEdit){accountConfig(b.dataset.cfgEdit);return}if(b.dataset.cfgSave){let id=b.dataset.cfgSave;commit(F.account(db,{id:id==='NEW'?null:id,name:value('cfg-name'),currency:value('cfg-currency'),initial:value('cfg-initial')}));closeSheet();render();toast('Akun tersimpan');return}if(b.dataset.evidence){evidenceSheet(b.dataset.evidence);return}if(b.dataset.correction){correctionSheet(b.dataset.correction);return}if(b.dataset.correctionSave){commit(F.correction(db,detailId,b.dataset.correctionSave,value('correction-value'),value('correction-reason')));closeSheet();render();toast('Permintaan audit tersimpan, risk asli tetap');return}if(b.dataset.setupReview){setupSheet(b.dataset.setupReview);return}if(b.dataset.setupSave){let criteria={};setupQs.forEach(([k])=>{if(['yes','no'].includes(value('setup-'+k)))criteria[k]=value('setup-'+k)==='yes'});commit(F.setupReview(db,b.dataset.setupSave,{grade:value('setup-grade'),criteria,reason:value('setup-reason')}));closeSheet();render();toast('Setup review tersimpan');return}
 -let x=b.dataset.x;if(!x)return;if(['calendar','tools','coach','scoreboard','data'].includes(x)){go(x);return}if(['research','actions','experiments'].includes(x)){workspaceType=x;go('workspace');return}if(x==='settings'){settings();return}if(x==='review-center'){reviewCenter();return}if(x==='account-config'){accounts();return}if(x==='account-new'){accountConfig('NEW');return}if(x==='specs'){specSheet();return}if(x==='quota'){quotaSheet();return}if(x==='target'){targetSheet();return}if(x==='audit'){auditSheet();return}if(x==='coverage'){coverageSheet();return}if(x==='ocr'){openOcr();return}if(x==='run-ocr'){await runOCR();return}if(x==='parse-ocr'){parseCapture();modalDirty=true;return}if(x==='apply-ocr'){applyCapture();return}if(x==='calculate'){showCalc();return}if(x==='calc-to-plan'){let out=calcOutput;safeNavigate(()=>{newDraft();draft.symbol=out.symbol;draft.layers=[{...blankLayer(),entry:out.input.entry,sl:out.input.sl,lot:String(out.lot),risk:String(C.money(out.risk))}];draft.side=out.input.side;dirty=true;route='new';step=0;history.pushState({route},'','#new');render()});return}if(x==='save-spec'){commit(F.spec(db,accountId,{symbol:value('spec-symbol'),valuePerUnit:value('spec-value'),point:value('spec-point'),volumeMin:value('spec-min'),volumeStep:value('spec-step'),volumeMax:value('spec-max')}));closeSheet();render();toast('Spec tersimpan; histori memakai snapshot saat eksekusi');return}if(x==='save-policy'){commit(F.policy(db,accountId,{mode:value('quota-mode'),limit:C.parseNumber(value('quota-limit'),'Limit',0)}));closeSheet();render();toast('Policy aktif mulai sekarang');return}if(x==='save-target'){commit(F.target(db,accountId,{month:value('target-month'),unit:value('target-unit'),value:value('target-value')}));closeSheet();render();toast('Target tersimpan');return}if(x==='save-work'){let old=(db[workspaceType]||[]).find(z=>z.id===workspaceEdit);commit(F.workspace(db,workspaceType,{id:workspaceEdit,accountId,dataset,title:value('work-title'),problem:value('work-problem'),evidence:value('work-evidence'),hypothesis:value('work-hypothesis'),action:value('work-action'),target:value('work-target'),evaluation:value('work-evaluation'),source:old?.source||workspaceForm.source||'MANUAL'}));closeSheet();route='workspace';history.pushState({route},'','#workspace');render();toast('Record workspace tersimpan');return}if(x==='save-evidence'){commit(F.evidence(db,evidenceTarget,{kind:evidenceSheet.data?'IMAGE':'NOTE',data:evidenceSheet.data,label:value('evidence-label'),note:value('evidence-note')}));closeSheet();render();toast('Evidence lokal tersimpan');return}if(x==='restore-draft'){restoreLocalDraft();return}if(x==='drop-draft'){ask('Hapus draft lokal?','Hanya draft belum tersimpan yang dihapus, bukan record trade.',()=>{localStorage.removeItem(DRAFT_KEY);savedDraft=null;render()});return}if(x==='keep-modal'){document.querySelector('#discard-modal')?.remove();return}if(x==='discard-modal'){modalDirty=false;closeSheet(true);return}
-+let x=b.dataset.x;if(!x)return;if(['calendar','tools','coach','scoreboard','data'].includes(x)){go(x);return}if(['research','actions','experiments'].includes(x)){workspaceType=x;go('workspace');return}if(x==='revise-trade'){revisionSheet();return}if(x==='revision-back'){if(modalDirty){closeSheet();$('#discard-modal')?.setAttribute('data-return-layers','');$('#discard-modal button')?.focus()}else revisionSheet();return}if(x==='settings'){settings();return}if(x==='review-center'){reviewCenter();return}if(x==='account-config'){accounts();return}if(x==='account-new'){accountConfig('NEW');return}if(x==='specs'){specSheet();return}if(x==='quota'){quotaSheet();return}if(x==='target'){targetSheet();return}if(x==='audit'){auditSheet();return}if(x==='coverage'){coverageSheet();return}if(x==='ocr'){openOcr();return}if(x==='run-ocr'){await runOCR();return}if(x==='parse-ocr'){parseCapture();return}if(x==='ocr-manual'){openCapturedLayer();return}if(x==='apply-ocr-batch'){applyOcrBatch();return}if(x==='calculate'){showCalc();return}if(x==='calc-to-plan'){let out=calcOutput;safeNavigate(()=>{newDraft();draft.symbol=out.symbol;draft.layers=[{...blankLayer(),entry:out.input.entry,sl:out.input.sl,lot:String(out.lot),risk:String(C.money(out.risk))}];draft.side=out.input.side;dirty=true;route='new';step=0;history.pushState({route},'','#new');render()});return}if(x==='save-spec'){commit(F.spec(db,accountId,{symbol:value('spec-symbol'),valuePerUnit:value('spec-value'),point:value('spec-point'),volumeMin:value('spec-min'),volumeStep:value('spec-step'),volumeMax:value('spec-max')}));closeSheet();render();toast('Spec tersimpan; histori memakai snapshot saat eksekusi');return}if(x==='save-policy'){commit(F.policy(db,accountId,{mode:value('quota-mode'),limit:C.parseNumber(value('quota-limit'),'Limit',0)}));closeSheet();render();toast('Policy aktif mulai sekarang');return}if(x==='save-target'){commit(F.target(db,accountId,{month:value('target-month'),unit:value('target-unit'),value:value('target-value')}));closeSheet();render();toast('Target tersimpan');return}if(x==='save-work'){let old=(db[workspaceType]||[]).find(z=>z.id===workspaceEdit);commit(F.workspace(db,workspaceType,{id:workspaceEdit,accountId,dataset,title:value('work-title'),problem:value('work-problem'),evidence:value('work-evidence'),hypothesis:value('work-hypothesis'),action:value('work-action'),target:value('work-target'),evaluation:value('work-evaluation'),source:old?.source||workspaceForm.source||'MANUAL'}));closeSheet();route='workspace';history.pushState({route},'','#workspace');render();toast('Record workspace tersimpan');return}if(x==='save-evidence'){commit(F.evidence(db,evidenceTarget,{kind:evidenceSheet.data?'IMAGE':'NOTE',data:evidenceSheet.data,label:value('evidence-label'),note:value('evidence-note')}));closeSheet();render();toast('Evidence lokal tersimpan');return}if(x==='restore-draft'){restoreLocalDraft();return}if(x==='drop-draft'){ask('Hapus draft lokal?','Hanya draft belum tersimpan yang dihapus, bukan record trade.',()=>{localStorage.removeItem(DRAFT_KEY);savedDraft=null;render()});return}if(x==='keep-modal'){document.querySelector('#discard-modal')?.remove();return}if(x==='discard-modal'){modalDirty=false;if(b.closest('[data-return-layers]'))revisionSheet();else closeSheet(true);return}
++let x=b.dataset.x;if(!x)return;if(['calendar','tools','coach','scoreboard','data'].includes(x)){go(x);return}if(['research','actions','experiments'].includes(x)){workspaceType=x;go('workspace');return}if(x==='delete-journal-trade'){deleteJournalTrade();return}if(x==='revise-trade'){revisionSheet();return}if(x==='revision-back'){if(modalDirty){closeSheet();$('#discard-modal')?.setAttribute('data-return-layers','');$('#discard-modal button')?.focus()}else revisionSheet();return}if(x==='settings'){settings();return}if(x==='review-center'){reviewCenter();return}if(x==='account-config'){accounts();return}if(x==='account-new'){accountConfig('NEW');return}if(x==='specs'){specSheet();return}if(x==='quota'){quotaSheet();return}if(x==='target'){targetSheet();return}if(x==='audit'){auditSheet();return}if(x==='coverage'){coverageSheet();return}if(x==='ocr'){openOcr();return}if(x==='run-ocr'){await runOCR();return}if(x==='parse-ocr'){parseCapture();return}if(x==='ocr-manual'){openCapturedLayer();return}if(x==='apply-ocr-batch'){applyOcrBatch();return}if(x==='calculate'){showCalc();return}if(x==='calc-to-plan'){let out=calcOutput;safeNavigate(()=>{newDraft();draft.symbol=out.symbol;draft.layers=[{...blankLayer(),entry:out.input.entry,sl:out.input.sl,lot:String(out.lot),risk:String(C.money(out.risk))}];draft.side=out.input.side;dirty=true;route='new';step=0;history.pushState({route},'','#new');render()});return}if(x==='save-spec'){commit(F.spec(db,accountId,{symbol:value('spec-symbol'),valuePerUnit:value('spec-value'),point:value('spec-point'),volumeMin:value('spec-min'),volumeStep:value('spec-step'),volumeMax:value('spec-max')}));closeSheet();render();toast('Spec tersimpan; histori memakai snapshot saat eksekusi');return}if(x==='save-policy'){commit(F.policy(db,accountId,{mode:value('quota-mode'),limit:C.parseNumber(value('quota-limit'),'Limit',0)}));closeSheet();render();toast('Policy aktif mulai sekarang');return}if(x==='save-target'){commit(F.target(db,accountId,{month:value('target-month'),unit:value('target-unit'),value:value('target-value')}));closeSheet();render();toast('Target tersimpan');return}if(x==='save-work'){let old=(db[workspaceType]||[]).find(z=>z.id===workspaceEdit);commit(F.workspace(db,workspaceType,{id:workspaceEdit,accountId,dataset,title:value('work-title'),problem:value('work-problem'),evidence:value('work-evidence'),hypothesis:value('work-hypothesis'),action:value('work-action'),target:value('work-target'),evaluation:value('work-evaluation'),source:old?.source||workspaceForm.source||'MANUAL'}));closeSheet();route='workspace';history.pushState({route},'','#workspace');render();toast('Record workspace tersimpan');return}if(x==='save-evidence'){commit(F.evidence(db,evidenceTarget,{kind:evidenceSheet.data?'IMAGE':'NOTE',data:evidenceSheet.data,label:value('evidence-label'),note:value('evidence-note')}));closeSheet();render();toast('Evidence lokal tersimpan');return}if(x==='restore-draft'){restoreLocalDraft();return}if(x==='drop-draft'){ask('Hapus draft lokal?','Hanya draft belum tersimpan yang dihapus, bukan record trade.',()=>{localStorage.removeItem(DRAFT_KEY);savedDraft=null;render()});return}if(x==='keep-modal'){document.querySelector('#discard-modal')?.remove();return}if(x==='discard-modal'){modalDirty=false;if(b.closest('[data-return-layers]'))revisionSheet();else closeSheet(true);return}
  }catch(err){showError(err.message)}}
  document.addEventListener('click',handleCompleteClick);
 -document.addEventListener('change',async e=>{try{if(e.target.id==='analytics-period'){period=e.target.value;render()}if(e.target.id==='calendar-month'){if(!/^\d{4}-\d{2}$/.test(e.target.value))return;calendarMonth=e.target.value;calendarSelection='';render()}if(e.target.id==='spec-pick'){let s=ctx().acc.specs?.find(s=>s.symbol===e.target.value);if(s)for(let [k,v]of Object.entries({'spec-symbol':s.symbol,'spec-value':s.valuePerUnit,'spec-point':s.point,'spec-min':s.volumeMin,'spec-step':s.volumeStep,'spec-max':s.volumeMax}))$('#'+k).value=v}if(e.target.id==='evidence-file'){let input=e.target,token=evidenceTarget;let data=await imageData(input.files[0]);if(token!==evidenceTarget||!$('#evidence-preview'))return;evidenceSheet.data=data;$('#evidence-preview').innerHTML='<img class="evidence-img" alt="Preview evidence" src="'+esc(data)+'">';modalDirty=true}if(e.target.id==='ocr-file'){let file=e.target.files[0];if(!file)return;ocrSession++;ocrBusy=false;ocrFile=null;resetCaptureCandidates();$('#ocr-raw').value='';captureControls();if(file.size>10*1024*1024||!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Pilih gambar JPG/PNG/WebP maksimal 10 MB');let token=ocrSession,data=await imageData(file);if(token!==ocrSession||!$('#ocr-preview'))return;ocrFile=file;$('#ocr-preview').innerHTML='<img class="evidence-img" alt="Preview screenshot MT5" src="'+esc(data)+'">';modalDirty=true;captureControls();await runOCR()}}catch(err){showError(err.message)}});
@@ -1383,7 +1471,7 @@ index e5681ab..81135c1 100644
 +});
 --- a/checkpoint/redesign/core.js
 +++ b/checkpoint/redesign/core.js
-@@ -6,12 +6,65 @@
+@@ -6,12 +6,150 @@
  function normalize(t){let x=clone(t);if(x.status==='PLAN')return x;x.layers=x.layers.map(l=>{let a=P.aggregateLayer({...l,tradeId:x.id,currency:x.currency,initialVolume:l.lot},l.exits||[]);return{...l,used:true,executed:true,final:a.status==='CLOSED',remainingVolume:a.remainingVolume??l.lot,finalNetPL:a.netPL===null?null:money(a.netPL),plSource:a.source||'NONE',sourceVerification:a.source==='ACTUAL'?{status:'CONFIRMED',confirmedAt:(l.exits.at(-1)||{}).at,method:'USER_MT5_HISTORY'}:null,finalCloseAt:a.status==='CLOSED'?(l.exits||[]).map(e=>e.at).sort().at(-1):null}});x.status=x.layers.every(l=>l.final)?'CLOSED':'OPEN';return x}
  function ready(t){if(!t)return{eligible:false};let r=E.actualReady(normalize(t));return r.eligible?{...r,netPL:sum(r.layers.map(l=>l.finalNetPL))}:r}
  function snapshot(db,id,dataset='Live',from=''){let acc=account(db,id),all=db.trades.filter(t=>t.accountId===id&&t.dataset===dataset).map(normalize),closed=all.map(t=>({t,r:ready(t),at:E.tradeCloseDate(t).value})).filter(x=>x.r.eligible&&x.at).sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));let balance=acc.initial,series=[{value:balance,at:null,id:null}],before=acc.initial;for(let x of closed){balance=sum([balance,x.r.netPL]);if(from&&x.at<from){before=balance;continue}series.push({value:balance,at:x.at,id:x.t.id})}series[0].value=before;let selected=closed.filter(x=>!from||x.at>=from),profits=selected.filter(x=>x.r.netPL>0),losses=selected.filter(x=>x.r.netPL<0),pnl=sum(selected.map(x=>x.r.netPL)),gp=sum(profits.map(x=>x.r.netPL)),gl=-sum(losses.map(x=>x.r.netPL)),peak=before,dd=0;series.forEach(p=>{peak=Math.max(peak,p.value);if(peak>0)dd=Math.max(dd,(peak-p.value)/peak*100)});let rs=selected.map(x=>{let r=E.actualR(x.t,acc.currency);return r.status==='VALID'?x.r.netPL/r.initialRisk:null}).filter(x=>x!==null);return{acc,all,closed:selected.map(x=>x.t),balance,pnl,start:before,series,n:selected.length,wr:selected.length?profits.length/selected.length*100:null,pf:gl>0?gp/gl:null,expectancy:rs.length?rs.reduce((a,b)=>a+b,0)/rs.length:null,rN:rs.length,dd:selected.length?dd:null}}
@@ -1409,6 +1497,86 @@ index e5681ab..81135c1 100644
 +    return [key,n];
 +  }));
 +}
++const executionFields=['exitPrice','commission','swap','ticket','exitReason','notes'];
++function layerRevisionData(layer){
++  return {
++    ...Object.fromEntries(['entry','sl','tp','lot','plannedRisk','executedAt','currentSL','initialRiskSnapshot','slEvents'].map(key=>[key,layer[key]??null])),
++    executionDetails:Object.fromEntries(executionFields.map(key=>[key,layer.executionDetails?.[key]??null]))
++  };
++}
++function reviseLayer(t,input,confirmRisk,now){
++  const layer=t.layers.find(l=>l.layerId===input.layerId);
++  if(!layer)fail('Layer tidak ditemukan');
++  const before=layerRevisionData(layer);
++  for(const key of ['entry','sl','tp','lot','plannedRisk']){
++    if(!Object.hasOwn(input,key))continue;
++    const n=parseNumber(input[key],key,key==='plannedRisk'?2:8,['sl','tp','plannedRisk'].includes(key));
++    if(n!==null&&n<=0)fail(key+' harus lebih dari nol');
++    if(n!==(before[key]===''?null:before[key]))layer[key]=n??(key==='plannedRisk'?null:'');
++  }
++  if(input.executedAt!==undefined){
++    if(!time(input.executedAt))fail('Waktu entry wajib diisi');
++    layer.executedAt=new Date(input.executedAt).toISOString();
++  }
++  if(input.executionDetails){
++    layer.executionDetails={...layer.executionDetails};
++    for(const key of executionFields){
++      if(!Object.hasOwn(input.executionDetails,key))continue;
++      const raw=input.executionDetails[key];
++      const value=['exitPrice','commission','swap'].includes(key)?parseNumber(raw,key,8,true):
++        String(raw??'').trim().slice(0,key==='notes'?1000:100)||null;
++      if(key==='exitPrice'&&value!==null&&value<=0)fail('Harga exit harus lebih dari nol');
++      layer.executionDetails[key]=value;
++    }
++  }
++  if(input.slEvents){
++    if(input.slEvents.length!==(layer.slEvents||[]).length)fail('Riwayat SL berubah. Buka ulang editor.');
++    layer.slEvents=(layer.slEvents||[]).map((event,index)=>{
++      const edit=input.slEvents[index];
++      if(edit.id!==event.id||!time(edit.at))fail('Identitas atau waktu perubahan SL tidak valid');
++      return {...event,at:new Date(edit.at).toISOString(),to:parseNumber(edit.to,'Harga SL',8),
++        method:edit.method,reason:String(edit.reason??'').trim().slice(0,1000)};
++    });
++  }
++  if(layer.slEvents?.length){
++    let from=Number(layer.sl);
++    layer.slEvents=layer.slEvents.map(event=>{const revised={...event,from};from=event.to;return revised});
++    layer.currentSL=from;
++  }else if(Object.hasOwn(layer,'currentSL'))layer.currentSL=Number(layer.sl);
++  if(input.riskAmount!==undefined){
++    const risk=parseNumber(input.riskAmount,'Risiko awal',2,true), old=layer.initialRiskSnapshot;
++    const initialSL=parseNumber(input.initialRiskSL,'SL saat entry',8,true);
++    if(old&&risk===null)fail('Isi nominal risiko awal yang sudah tercatat');
++    if(!old&&risk===null&&initialSL!==null)fail('Isi juga nominal risiko awal atau kosongkan SL saat entry');
++    if(risk!==null&&(!old||risk!==old.riskAmount||initialSL!==old.stopLoss||layer.entry!==old.entry||layer.lot!==old.lot)){
++      if(!confirmRisk)fail('Konfirmasi risiko awal berdasarkan catatan saat entry');
++      if(!(risk>0&&initialSL>0&&(t.side==='Buy'?initialSL<layer.entry:initialSL>layer.entry)))fail('Isi risiko positif dan SL saat entry di sisi rugi');
++      const cap=R.captureInitialRisk({tradeId:t.id,layerId:layer.layerId,layerStatus:'OPEN',
++        entry:layer.entry,stopLoss:initialSL,lot:layer.lot,riskAmount:risk,currency:t.currency,
++        capturedAt:now,actor:'LOCAL_USER',method:'USER_VERIFIED_INITIAL_RISK_REVISION',snapshotId:uid()});
++      if(!cap.ok)fail('Risiko awal belum valid: '+cap.code);
++      layer.initialRiskSnapshot={...cap.snapshot,statusAtCapture:t.status,previousSnapshotId:old?.snapshotId??null};
++    }
++  }
++  const after=layerRevisionData(layer);
++  return JSON.stringify(before)===JSON.stringify(after)?null:{layerId:layer.layerId,before,after};
++}
++function deleteTrade(db,id,now=new Date().toISOString()){
++  const next=clone(db), index=next.trades.findIndex(t=>t.id===id);
++  if(index<0)fail('Trade tidak ditemukan');
++  const [removed]=next.trades.splice(index,1);
++  const detached=[];
++  for(const trade of next.trades){
++    if(trade.parentTradeId!==id)continue;
++    trade.parentTradeId=null;
++    trade.updatedAt=now;
++    detached.push(trade.id);
++  }
++  next.audit.push({id:uid(),type:'TRADE_DELETED',tradeId:id,accountId:removed.accountId,dataset:removed.dataset,detached,at:now});
++  next.revision++;
++  validateDB(next);
++  return next;
++}
 +function reviseTrade(db,id,input,now=new Date().toISOString()){
 +  const next=clone(db), t=next.trades.find(trade=>trade.id===id);
 +  if(!t||t.status==='PLAN')fail('Trade tereksekusi tidak ditemukan');
@@ -1417,6 +1585,7 @@ index e5681ab..81135c1 100644
 +  const context=journalContext({...t,...input.context});
 +  const beforeContext=journalContext(t);
 +  const plan=input.plan?tradePlan(input.plan):t.plan;
++  const layerChange=input.layer?reviseLayer(t,input.layer,input.confirmRisk,now):null;
 +  const changes=[];
 +  for(const item of input.exits||[]){
 +    const layer=t.layers.find(l=>l.layerId===item.layerId);
@@ -1425,11 +1594,13 @@ index e5681ab..81135c1 100644
 +    const previous=layer.exits[index], netPL=parseNumber(item.netPL,'Net P/L '+layer.layerId,2);
 +    if(!time(item.at))fail('Isi waktu exit '+layer.layerId);
 +    const at=new Date(item.at).toISOString();
-+    if(netPL===previous.netPL&&at===previous.at)continue;
++    const closedVolume=item.closedVolume===undefined?previous.closedVolume:parseNumber(item.closedVolume,'Lot ditutup',8);
++    const plSource=item.plSource??previous.plSource;
++    if(netPL===previous.netPL&&at===previous.at&&closedVolume===previous.closedVolume&&plSource===previous.plSource)continue;
 +    if(changes.some(change=>change.before.eventId===item.eventId))fail('Exit direvisi dua kali');
-+    if(previous.plSource==='ACTUAL'&&!input.confirmActual)fail('Konfirmasi seluruh koreksi Actual dari riwayat MT5');
++    if(plSource==='ACTUAL'&&!input.confirmActual)fail('Konfirmasi seluruh koreksi Actual dari riwayat MT5');
 +    const updated=P.appendExit({...layer,tradeId:id,currency:t.currency},{
-+      ...previous,at,netPL,sourceVerification:previous.plSource==='ACTUAL'?
++      ...previous,at,netPL,closedVolume,plSource,sourceVerification:plSource==='ACTUAL'?
 +        {status:'CONFIRMED',confirmedAt:now,method:'USER_MT5_HISTORY_REVISION'}:null
 +    });
 +    if(!updated.ok)fail(updated.code);
@@ -1438,25 +1609,27 @@ index e5681ab..81135c1 100644
 +  }
 +  const beforePlan=t.plan??tradePlan();
 +  const afterPlan=plan??beforePlan;
-+  if(!changes.length&&JSON.stringify(beforeContext)===JSON.stringify(context)&&JSON.stringify(beforePlan)===JSON.stringify(afterPlan))fail('Belum ada perubahan untuk disimpan');
++  if(!layerChange&&!changes.length&&JSON.stringify(beforeContext)===JSON.stringify(context)&&JSON.stringify(beforePlan)===JSON.stringify(afterPlan))fail('Belum ada perubahan untuk disimpan');
 +  Object.assign(t,context,{plan:afterPlan,updatedAt:now});
 +  validateTrade(t,next);
-+  next.trades[next.trades.indexOf(t)]=normalize(t);
++  const revised=normalize(t);
++  if(revised.status!==t.status)fail('Total lot exit harus sesuai status trade. Untuk CLOSED, seluruh lot harus tertutup.');
++  next.trades[next.trades.indexOf(t)]=revised;
 +  next.revision++;
 +  next.audit.push({id:uid(),type:'TRADE_REVISED',tradeId:id,at:now,reason,
-+    before:{context:beforeContext,plan:beforePlan},after:{context,plan:afterPlan},exits:changes});
++    before:{context:beforeContext,plan:beforePlan},after:{context,plan:afterPlan},layer:layerChange,exits:changes});
 +  validateDB(next);
 +  return next;
 +}
  function put(db,t){const next=clone(db);let i=next.trades.findIndex(x=>x.id===t.id);if(i<0)next.trades.push(t);else next.trades[i]=t;next.revision++;next.audit.push({id:uid(),type:i<0?'TRADE_CREATED':'PLAN_UPDATED',tradeId:t.id,at:new Date().toISOString()});validateDB(next);return next}
  function exit(db,id,layerId,input,now=new Date().toISOString()){let next=clone(db),t=next.trades.find(t=>t.id===id);if(!t||t.status!=='OPEN')fail('Trade tidak sedang OPEN');let l=t.layers.find(l=>l.layerId===layerId);if(!l)fail('Layer tidak ditemukan');let e=P.appendExit({...l,tradeId:id,currency:t.currency},{eventId:input.eventId||uid(),at:input.at,closedVolume:parseNumber(input.volume,'Volume ditutup',8),netPL:parseNumber(input.netPL,'Actual Net P/L',2),currency:t.currency,plSource:input.source||'ACTUAL',sourceVerification:input.confirmActual?{status:'CONFIRMED',confirmedAt:now,method:'USER_MT5_HISTORY'}:null},l.exits);if(!e.ok)fail(e.code);if(e.event.plSource==='ACTUAL'&&!e.event.actualConfirmed)fail('Konfirmasi Actual diperlukan');l.exits.push(e.event);validateTrade(t,next);t=normalize(t);next.trades[next.trades.findIndex(x=>x.id===id)]=t;next.revision++;next.audit.push({id:uid(),type:'EXIT_RECORDED',tradeId:id,layerId,at:now,eventId:e.event.eventId});validateDB(next);return next}
  function validateParent(t,db){if(!t.parentTradeId)return;let p=db.trades.find(x=>x.id===t.parentTradeId);if(!p||p.id===t.id)fail('Parent re-entry tidak sah');if(normalize(p).status!=='CLOSED')fail('Parent re-entry harus CLOSED');if(p.accountId!==t.accountId||p.currency!==t.currency||p.dataset!==t.dataset)fail('Re-entry harus dalam akun, currency dan dataset yang sama');let last=E.tradeCloseDate(normalize(p)).value;if(!last||Date.parse(t.date)<=Date.parse(last))fail('Waktu idea re-entry harus setelah parent close');for(let l of t.layers)if(l.executedAt&&Date.parse(l.executedAt)<=Date.parse(last))fail('Eksekusi re-entry harus setelah parent close')}
-@@ -19,5 +72,5 @@
+@@ -19,5 +157,5 @@
  function appendSl(db,id,layerId,input,now=new Date().toISOString()){let next=clone(db),t=next.trades.find(t=>t.id===id);if(!t||normalize(t).status!=='OPEN')fail('SL hanya dapat dicatat untuk trade OPEN');let l=t.layers.find(l=>l.layerId===layerId);if(!l||P.aggregateLayer({...l,tradeId:id,currency:t.currency},l.exits||[]).status==='CLOSED')fail('Layer sudah final/tidak tersedia');let event={id:input.id||uid(),at:input.at,recordedAt:now,from:Number(l.currentSL??l.sl),to:parseNumber(input.value,'Current SL',8),method:input.method,reason:String(input.reason||'').trim(),actor:'LOCAL_USER'};l.slEvents=l.slEvents||[];l.slEvents.push(event);l.currentSL=event.to;validateSlEvents(t,l);next.revision++;next.audit.push({id:uid(),type:'SL_EVENT_RECORDED',tradeId:id,layerId,eventId:event.id,at:now});validateDB(next);return next}
  function validateReviews(t){let ids=new Set();for(let h of t.reviewHistory||[]){if(!h.review||ids.has(h.review.reviewId)||h.review.tradeId!==t.id)fail('Riwayat review tidak valid');ids.add(h.review.reviewId);let result=V.buildProcessReview({tradeId:t.id,reviewId:h.review.reviewId,actor:h.review.completedBy,at:h.review.completedAt,answers:h.review.answers});if(!result.ok)fail('Jawaban review tidak lengkap');if(h.revision&&(!h.revision.reason||h.revision.nextReviewId!==h.review.reviewId))fail('Alasan revisi review wajib diisi')}if(t.reviewStatus==='COMPLETE'&&!(t.reviewHistory||[]).length)fail('Review COMPLETE tanpa bukti')}
  function review(db,id,input,now=new Date().toISOString()){let next=clone(db),t=next.trades.find(t=>t.id===id);if(!t||normalize(t).status!=='CLOSED')fail('Review final hanya untuk trade CLOSED');let built=V.buildProcessReview({tradeId:id,reviewId:uid(),actor:'LOCAL_USER',at:now,answers:input.answers});if(!built.ok)fail('Jawab seluruh lima pertanyaan review secara eksplisit');t.reviewHistory=t.reviewHistory||[];let prev=t.reviewHistory.at(-1),revision=null;if(prev){let revised=V.appendReviewRevision(prev.review,built.review,{eventId:uid(),actor:'LOCAL_USER',at:now,reason:String(input.reason||'').trim()});if(!revised.ok)fail('Alasan revisi review wajib diisi');revision=revised.event}t.reviewHistory.push({review:built.review,psychology:String(input.psychology||'').slice(0,4000),revision});t.reviewStatus='COMPLETE';next.revision++;next.audit.push(built.auditEvent);if(revision)next.audit.push(revision);validateDB(next);return next}
 -return{KEY,parseNumber,appendSl,review,fresh,load,persist,validateDB,createTrade,put,exit,snapshot,normalize,ready,uid,money,clone,sum};
-+return{KEY,reviseTrade,parseNumber,appendSl,review,fresh,load,persist,validateDB,createTrade,put,exit,snapshot,normalize,ready,uid,money,clone,sum};
++return{KEY,reviseTrade,deleteTrade,parseNumber,appendSl,review,fresh,load,persist,validateDB,createTrade,put,exit,snapshot,normalize,ready,uid,money,clone,sum};
  });
 --- a/checkpoint/redesign/features.js
 +++ b/checkpoint/redesign/features.js
@@ -1583,7 +1756,7 @@ index e5681ab..81135c1 100644
  test('Net PL no fee double deduction',()=>{let m=C.snapshot(db,'cent');assert.equal(m.pnl,0);assert.equal(m.wr,50);assert.equal(m.pf,1)});
  test('close-time period filters',()=>assert.equal(C.snapshot(db,'cent','Live','2026-11-04T00:00:00Z').n,0));
  test('PLAN may be incomplete but no KPI',()=>{let t=C.createTrade({...base,status:'PLAN',layers:[{entry:'',sl:'',tp:'',lot:'',risk:''}]},db);let next=C.put(db,t);assert.equal(C.snapshot(next,'cent').n,2)});
-@@ -32,4 +58,32 @@
+@@ -32,4 +58,59 @@
  test('storage failure preserves previous state',()=>{let old=mem.value;let store={getItem(){return old},setItem(){throw Error('full')},removeItem(){throw Error('full')}};assert.throws(()=>C.persist(store,db),/belum tersimpan/);assert.equal(mem.value,old)});
  test('stale tab revision rejected before write',()=>{let writes=0;let store={getItem(){return JSON.stringify({...db,revision:99})},setItem(){writes++}};assert.throws(()=>C.persist(store,db,1),/tab lain/);assert.equal(writes,0)});
  test('corrupt persisted data not silently overwritten',()=>{let writes=0;let store={getItem(){return '{broken'},setItem(){writes++}};assert.throws(()=>C.load(store));assert.equal(writes,0)});
@@ -1614,6 +1787,33 @@ index e5681ab..81135c1 100644
 +  assert.equal(C.ready(C.createTrade({...data,confirmActual:true},C.fresh())).eligible,false);
 +  const allActual=C.createTrade({...data,confirmActual:true,layers:[first,{...second,plSource:'ACTUAL'}]},C.fresh());
 +  assert.equal(C.ready(allActual).netPL,30);
++});
++test('full layer edit checks exit volumes and records verified initial risk',()=>{
++  const t=db.trades.find(trade=>trade.layers[0].initialRiskSnapshot===null&&C.ready(trade).eligible);
++  const l=t.layers[0], e=l.exits[0];
++  const input={reason:'Cocokkan MT5',confirmActual:true,confirmRisk:true,
++    layer:{layerId:l.layerId,lot:'0.05',entry:2701,tp:2725,riskAmount:25,initialRiskSL:2690,
++      executionDetails:{ticket:'123456',commission:-1}},
++    exits:[{layerId:l.layerId,eventId:e.eventId,netPL:-20,at:e.at,closedVolume:'0.05'}]};
++  assert.throws(()=>C.reviseTrade(db,t.id,{...input,confirmRisk:false}),/Konfirmasi risiko/);
++  assert.throws(()=>C.reviseTrade(db,t.id,{...input,exits:[]}),/Total lot exit/);
++  const next=C.reviseTrade(db,t.id,input);
++  const saved=next.trades.find(trade=>trade.id===t.id).layers[0];
++  assert.equal(saved.executionDetails.ticket,'123456');
++  assert.equal(saved.initialRiskSnapshot.riskAmount,25);
++  assert.equal(next.audit.at(-1).layer.before.initialRiskSnapshot,null);
++  assert.equal(next.audit.at(-1).exits[0].before.closedVolume,e.closedVolume);
++  assert.equal(C.snapshot(next,'cent').rN,C.snapshot(db,'cent').rN+1);
++});
++test('deleting a parent keeps the linked re-entry and removes only the parent result',()=>{
++  const original=db.trades[0], date='2026-11-06T12:00:00.000Z';
++  const child=C.createTrade({...base,date,parentTradeId:original.id,layers:[{...base.layers[0],executedAt:date}]},db);
++  const source=C.put(db,child);
++  const next=C.deleteTrade(source,original.id);
++  assert.equal(next.trades.find(t=>t.id===child.id).parentTradeId,null);
++  assert.deepEqual(next.audit.at(-1).detached,[child.id]);
++  assert.equal(C.snapshot(next,'cent').n,C.snapshot(source,'cent').n-1);
++  assert.equal(source.trades.find(t=>t.id===child.id).parentTradeId,original.id);
 +});
  console.log('TOTAL '+count+' PASS');
 --- a/checkpoint/redesign/tests/features.test.cjs
