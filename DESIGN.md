@@ -99,3 +99,22 @@ Do not fabricate entry/SL/TP/lot in the trade sheet. Reset changes only view sta
 not the synthetic ideas. Dialogs use native modal behavior and preserve keyboard
 focus management where the browser supports showModal. No login or live trading
 capability is added.
+
+## Core RC · Home dan Journal
+
+Home menampilkan komposisi Win/Loss/BE dari Trade Idea CLOSED Actual pada
+periode yang dipilih. Target bulanan memakai P/L CLOSED Actual bulan berjalan
+untuk akun dan dataset aktif. Persentase tetap menampilkan nilai aktual saat
+bar berhenti di 0% atau 100%.
+
+Journal mengikuti FR-06 dan PR-07. Satu kartu mewakili satu ide, dengan
+instrumen, arah, status, sumber hasil, jumlah layer, dan akses detail.
+CLOSED diurutkan berdasarkan waktu close. PLAN dan OPEN mengikuti tanggal
+idea. Pencarian dan chip status tampil langsung. Periode, hasil, sumber,
+dan urutan waktu ada di bottom sheet. Rincian layer dan evidence ada pada
+halaman detail yang dibuka dari kartu.
+
+Bottom nav berbentuk pil dengan indikator aktif dan FAB bulat untuk New Trade.
+Konfirmasi penting memakai dialog di tengah. Filter dan pengaturan tampilan
+memakai bottom sheet. Sakelar Kurangi animasi berlaku langsung dan tersimpan
+per browser. Pengaturan pengurangan gerak perangkat tetap dihormati.

@@ -70,3 +70,7 @@ sesuai memiliki SHA-256 HTML
 `8de7e907a5f900308642022896c928e8680f70494e34b368d8fe94626a09a028`.
 Core RC memakai penyimpanan lokal. Ekspor backup dari working copy lama bila
 memindahkan file atau membuka versi baru di alamat browser yang berbeda.
+
+Patch mencakup donut hasil CLOSED Actual, progres target bulanan, Journal
+berbasis kartu, panel filter dan sortir, dialog konfirmasi, serta sakelar
+Kurangi animasi. Demo Home juga memakai bentuk navigasi baru.

@@ -35,11 +35,13 @@ dialog[open]{overscroll-behavior:contain}
 .sheet-action{border-color:#716a82;color:var(--text)}
 .analytics-grid,.trades-panel{scroll-margin-top:16px}
 @media(max-width:999px){
- .bottom-nav{background:#18171e;border-color:var(--line);grid-template-columns:repeat(5,minmax(0,1fr));padding-inline:6px}
+ .bottom-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));padding:5px 8px 3px;border:1px solid #423a52;border-radius:999px;background:#1b1822;box-shadow:0 6px 22px #0a07128f}
+ .bottom-nav .nav-button{position:relative;justify-self:stretch}
+ .bottom-nav .nav-button[aria-current]::before{content:'';position:absolute;top:-6px;width:15px;height:2px;border-radius:8px;background:var(--blue)}
  .bottom-nav .nav-button{min-width:0;min-height:53px;color:var(--muted)}
  .bottom-nav .nav-button[aria-current]{color:var(--blue)}
  .bottom-nav .nav-button[aria-current]>.icon{background:#342a49;border-radius:8px;padding:4px;width:32px;height:28px}
- .bottom-nav .new-icon{background:#c7b9ff;color:#211737;border-color:#c7b9ff;border-radius:13px}
+ .bottom-nav .new-icon{width:44px;height:44px;margin-top:-14px;background:#c7b9ff;color:#211737;border-color:#c7b9ff;border-radius:50%;box-shadow:0 3px 12px #0a071280}
 }
 </style></head><body>
 <a href="#main" class="skip">Lewati navigasi</a>

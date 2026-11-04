@@ -67,3 +67,15 @@ or verified. GitHub contains source, not a hosted application.
 
 Bukti ini berasal dari browser dan fixture sintetis. Uji fisik Android,
 OCR gambar MT5 nyata, serta deployment produksi belum dilakukan pada redesign.
+
+## Penambahan Home dan Journal
+
+- Chromium 153 pada 320/360/375/390/412/768/1280 CSS px. Verifikasi donut
+  kosong, komposisi termasuk BE bernilai nol, dan target bulanan yang
+  tetap konsisten saat periode Home berubah.
+- Verifikasi chip status, pencarian tanpa hasil, filter BE + Actual, reset,
+  urutan waktu, detail Trade Idea dan layer, serta fokus saat dialog konfirmasi.
+- Uji sakelar Kurangi animasi dari keyboard dan konfirmasi pilihan setelah
+  reload. Halaman tetap bebas overflow horizontal pada viewport uji.
+- 108 tes regresi Core RC dan tes DOM demo Home lulus. Patch dapat diterapkan
+  ulang ke baseline OCR1 dengan output HTML identik.
