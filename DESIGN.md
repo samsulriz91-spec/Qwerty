@@ -1,18 +1,18 @@
-# Home — Modern Analytics
+# Home demo · Calm Cockpit
 
-User-approved direction C, 4 November 2026. Scope remains a standalone Home
-prototype for a trader using one Android phone. All data is synthetic.
+Palet kandidat 4 November 2026. Demo Home ditujukan untuk trader yang
+menggunakan satu HP Android. Seluruh data demo bersifat sintetis.
 
 ## Design plan
 
 | Role | Token |
 | --- | --- |
-| Midnight background | `#080f1c` |
-| Navy surface | `#101c2e` |
-| Divider | `#25354c` |
-| Primary text | `#edf4ff` |
-| Secondary text | `#9cacc4` |
-| Signal blue | `#6bafff` |
+| Latar grafit | `#141318` |
+| Permukaan | `#1d1b23` |
+| Pembatas | `#373342` |
+| Teks utama | `#f3effa` |
+| Teks sekunder | `#b7afc7` |
+| Aksen lavender | `#c7b9ff` |
 
 Mint marks wins, coral marks losses, and slate marks breakeven. Use system
 sans-serif for the interface and Bahnschrift/DIN Alternate fallbacks for numeric
@@ -30,11 +30,10 @@ records. Search spans the toolbar width; outcome and sort controls share a row.
 
 ## Review before implementation
 
-Keep the navy/blue preference. Reserve visual emphasis for the actual balance
-signal; avoid decorative gradients and miniature charts without data meaning.
-Use varied hierarchy: compact KPI summaries, one main chart, a smaller outcome
-visual, a flat goal/discipline strip, and an aligned table. Do not invent growth
-comparisons or readiness claims.
+Tempatkan saldo sebagai fokus Home, dengan gradien lembut khusus kartu saldo.
+Lavender menandai grafik saldo, pilihan aktif, dan aksi utama. Warna hijau,
+koral, dan abu-abu menunjukkan hasil trade. Gunakan batas tipis untuk bagian
+yang perlu dipindai cepat dan sisakan visual utama untuk grafik saldo.
 
 ## Interaction and motion
 
@@ -94,9 +93,71 @@ all IDs as independent objects. Optional animation failures preserve static data
 | Dialog | Confirm returning filters/view settings to defaults |
 | Snackbar | Action feedback, with Undo for the animation setting |
 | FAB | Raised circular Trade-new action within bottom navigation |
-| Bottom navigation | Existing five Home-level destinations; other pages remain placeholders |
+| Bottom navigation | Home, Journal (tabel), New Trade (petunjuk), Analytics (grafik), More (opsi tampilan) |
 
 Do not fabricate entry/SL/TP/lot in the trade sheet. Reset changes only view state,
 not the synthetic ideas. Dialogs use native modal behavior and preserve keyboard
 focus management where the browser supports showModal. No login or live trading
 capability is added.
+
+## Core RC · Home dan Journal
+
+Home menampilkan komposisi Win/Loss/BE dari Trade Idea CLOSED Actual pada
+periode yang dipilih. Target bulanan memakai P/L CLOSED Actual bulan berjalan
+untuk akun dan dataset aktif. Persentase tetap menampilkan nilai aktual saat
+bar berhenti di 0% atau 100%.
+
+Journal mengikuti FR-06 dan PR-07. Satu kartu mewakili satu ide, dengan
+instrumen, arah, status, sumber hasil, jumlah layer, dan akses detail.
+CLOSED diurutkan berdasarkan waktu close. PLAN dan OPEN mengikuti tanggal
+idea. Pencarian dan chip status tampil langsung. Periode, hasil, sumber,
+dan urutan waktu ada di bottom sheet. Rincian layer dan evidence ada pada
+halaman detail yang dibuka dari kartu.
+
+Bottom nav berbentuk pil dengan indikator aktif dan FAB bulat untuk New Trade.
+Konfirmasi penting memakai dialog di tengah. Filter dan pengaturan tampilan
+memakai bottom sheet. Sakelar Kurangi animasi berlaku langsung dan tersimpan
+per browser. Pengaturan pengurangan gerak perangkat tetap dihormati.
+
+## Penyempurnaan statistik, Journal, dan New Trade
+
+Statistik Home menempatkan visual pada masing-masing kartu. Win Rate memakai
+komposisi Win/Loss/BE. Profit Factor membandingkan nilai total hasil positif
+dengan nilai absolut hasil negatif. Drawdown memakai ring persentase. Expectancy
+tetap memakai satuan R dengan penanda relatif terhadap nol.
+
+Journal memakai satu baris tab status bersudut 7 px. Filter menggunakan pilihan
+visual langsung di bottom sheet. Pilihan baru berlaku setelah Terapkan.
+
+New Trade mengikuti Identitas → Layer → Review. Status dipilih pada Identitas,
+jumlah dan nilai posisi dikelola pada Layer, dan konfirmasi Actual ada di Review.
+Dua layer tersedia secara default. Hapus layer berisi data meminta konfirmasi.
+
+OCR satu posisi mengisi kandidat yang dapat dikenali dan tidak bentrok pada
+draft layer aktif. Pengguna bisa memilih hasil yang bentrok secara eksplisit.
+Offset harus diisi sebelum waktu OCR dipakai. Mengubah teks atau offset
+membatalkan staging sesi terkait. Gross membutuhkan konfirmasi semua komponen
+biaya. OCR tidak menyimpan trade dan tidak mengonfirmasi Actual.
+
+## Quick Trade dan impor beberapa layer
+
+New Trade membuka pilihan Quick Trade dan Detail Trade setelah konteks akun
+dan dataset. Quick Trade menggabungkan identitas, layer, dan konfirmasi dalam
+satu layar. Detail Trade mempertahankan Identitas → Layer → Review. Kedua mode
+memakai draft dan validasi yang sama, dengan data Live dan Experiment terpisah.
+
+Satu screenshot menghasilkan 1–3 layer sesuai urutan baris MT5. Panel menampilkan
+ringkasan terpisah oleh garis tipis. Koreksi tiap layer bisa dibuka bila perlu.
+Satu tindakan menerapkan seluruh hasil ke draft. Batch berbeda simbol atau
+arah, tiket ganda, dan lebih dari tiga posisi memerlukan gambar terpisah atau
+koreksi teks. Penerapan atas draft yang sudah berisi data menampilkan dampaknya.
+
+Waktu dikonversi ke WIB setelah offset server diisi dan dapat digunakan kembali
+per akun. Sesi diperkirakan dari waktu entry terawal, berdasarkan jam lokal
+Tokyo, London, dan New York. Sesi yang sudah diisi manual tetap dipakai.
+Nominal MT5 dengan komisi dan swap terbaca nol dapat menjadi kandidat Net.
+Biaya nonnol atau belum diketahui ditinjau sebelum simpan. Bukti OCR mencatat
+harga exit, komisi, swap, dan tiket ketika tersedia.
+
+[Impeccable](https://github.com/pbakaus/impeccable) dipakai untuk review susunan
+aksi, pengelompokan informasi, dan keterbacaan layar sempit.
