@@ -1,7 +1,7 @@
 # Rencana Trading Assistant MT5 — Proyek 2
 
 Tanggal pencatatan: 8 November 2026 (WIB)
-Status: arah pengembangan dicatat; implementasi EA belum dimulai.
+Status: target produk komersial lengkap telah ditetapkan pengguna; implementasi EA belum dimulai.
 
 ## 1. Tujuan yang dinyatakan pengguna
 
@@ -30,9 +30,11 @@ Baseline ini tidak membuktikan EA telah dibuat. Pengujian fisik Android, instala
 
 ## 3. Arah produk EA
 
-Usulan awal: asisten trading manual. Pengguna menentukan arah dan setup; EA membantu kalkulasi, eksekusi yang diperintahkan, serta pengelolaan posisi menurut aturan.
+Target produk: Trading Assistant lengkap untuk dijual. Pengguna adalah pemilik produk dan tester; asisten membantu rancangan, implementasi, pemeriksaan kode, dokumentasi dan perbaikan berdasarkan bukti pengujian.
 
-Penting: ini rekomendasi desain, bukan persetujuan menyeluruh untuk semua fitur di bawah. Pemilihan fitur dan batas otoritas EA harus dikonfirmasi saat memulai proyek EA.
+Arah dasar: asisten trading manual. Pengguna menentukan arah dan setup; EA membantu kalkulasi, eksekusi yang diperintahkan, serta pengelolaan posisi menurut aturan.
+
+Keputusan pengguna terbaru: versi lengkap Trading Assistant menjadi target, termasuk kemampuan referensi dalam dokumen ini. Urutan pengembangan bertahap bukan pengurangan target. Parameter, perilaku eksekusi, scope rilis pertama, platform uji, dan kesiapan jual masih memerlukan spesifikasi serta bukti pengujian.
 
 Fitur khas yang diprioritaskan untuk dibahas:
 - Satu anggaran risiko dibagi ke L1 dan L2, bukan dikalikan dua.
@@ -44,7 +46,7 @@ Fitur khas yang diprioritaskan untuk dibahas:
 
 ## 4. Kemampuan referensi yang dapat dipertimbangkan
 
-Daftar kandidat, belum seluruhnya masuk scope:
+Target kemampuan versi lengkap; setiap modul harus melewati pengujian sebelum dinyatakan tersedia:
 1. Perhitungan risiko berdasarkan balance, equity, free margin, nominal, atau basis khusus.
 2. Garis Entry/SL/TP yang dapat digeser pada chart.
 3. Eksekusi market dan pending order.
@@ -109,7 +111,7 @@ https://get.exness.help/hc/en-us/articles/360013782820-Are-Expert-Advisors-EA-av
 
 ## 7. Keputusan yang masih terbuka
 
-- Target penggunaan pribadi atau komersial.
+- Target komersial sudah diputuskan. Kanal penjualan dan bentuk lisensi masih terbuka.
 - Nama produk, lisensi/distribusi, dan dukungan broker selain Exness.
 - Scope versi pertama, jenis order, serta aturan untuk akun hedging/netting.
 - Apakah L1/L2 selalu posisi terpisah atau dikelola sebagai partial close.
@@ -119,4 +121,8 @@ https://get.exness.help/hc/en-us/articles/360013782820-Are-Expert-Advisors-EA-av
 
 ## 8. Checkpoint untuk melanjutkan
 
-Mulai dari baseline RC2 dan dokumen ini. Tugas berikutnya adalah menyusun PRD Trading Assistant MT5 versi pertama, lalu mengunci scope bersama pengguna. Jangan menganggap semua fitur referensi sudah disetujui. Jangan mengubah atau deploy web, memulai pembelian, atau mengeksekusi transaksi hanya karena rencana ini tersimpan.
+Mulai dari baseline RC2 dan dokumen ini. PRD awal produk komersial disimpan dalam TRADING_ASSISTANT_COMMERCIAL_PRD.md. Tugas berikutnya adalah menetapkan lingkungan pengujian dan acceptance criteria rinci, lalu mengimplementasikan mesin kalkulasi MQL5. Cakupan lengkap adalah target pengguna; detail yang belum diputuskan tidak boleh diisi dengan klaim keberhasilan. Jangan mengubah atau deploy web, memulai pembelian, atau mengeksekusi transaksi hanya karena rencana ini tersimpan.
+
+## 9. Status komersialisasi
+
+Komersial adalah tujuan, bukan status siap jual. Compile, pengujian pada MT5, pengelolaan kesalahan eksekusi, restart/reconnect, dokumentasi, dan validasi pengguna harus dibuktikan. Pengguna berperan sebagai tester. Belum ada file EA terkompilasi atau rilis EA yang dinyatakan lulus. Web RC2 tetap terpisah dan tidak diubah oleh keputusan ini.
