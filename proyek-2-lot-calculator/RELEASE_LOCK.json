@@ -1,0 +1,11 @@
+{
+  "release": "RC1",
+  "project_number": 2,
+  "locked_design_and_features": true,
+  "worker_sha256": "8aec63a5883c6b3c53513e3a966acee4606eb4efcf98ff9416afb3d273a036ea",
+  "known_limits": [
+    "Forex daily reference, not live broker quotes",
+    "Android installation/offline not physically verified",
+    "Third-party source availability can change"
+  ]
+}
