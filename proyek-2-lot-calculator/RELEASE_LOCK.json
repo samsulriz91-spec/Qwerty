@@ -1,11 +1,12 @@
 {
-  "release": "RC1",
+  "release": "RC2",
   "project_number": 2,
+  "replaces": "RC1",
   "locked_design_and_features": true,
-  "worker_sha256": "8aec63a5883c6b3c53513e3a966acee4606eb4efcf98ff9416afb3d273a036ea",
+  "worker_sha256": "7bfe117e85a7db86627c20a45119f22f15b5d7160c5e377226983aabba2cf81c",
   "known_limits": [
-    "Forex daily reference, not live broker quotes",
-    "Android installation/offline not physically verified",
-    "Third-party source availability can change"
+    "Not broker MT5 quotes",
+    "Physical Android keyboard/install/offline unverified",
+    "Exness digits and lot step provisional; check MT5"
   ]
 }
